@@ -1,0 +1,26 @@
+{
+    "name": "verclam/smart-fetch-bundle",
+    "description": "This bundle will help avoiding make n+1 in symfony doctrine entities",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Verclam\\SmartFetchBundle\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Khalil Medjahed",
+            "email": "kalilov@hotmail.com"
+        },
+        {
+            "name": "Said Waskar",
+            "email": "said.waskar@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "sensio/framework-extra-bundle": ">=5.1"
+    }
+
+}
