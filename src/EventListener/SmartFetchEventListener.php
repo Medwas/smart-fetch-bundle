@@ -2,7 +2,7 @@
 
     namespace Verclam\SmartFetchBundle\EventListener;
 
-    use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+    use ReflectionException;
     use Symfony\Component\HttpKernel\Event\ControllerEvent;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
     use Verclam\SmartFetchBundle\Services\SmartFetchEntityFetcher;
@@ -15,6 +15,9 @@
         {
         }
 
+        /**
+         * @throws ReflectionException
+         */
         public function __invoke(ControllerEvent $event) : void
         {
             $controller = $event->getController();
