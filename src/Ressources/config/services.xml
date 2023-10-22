@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <container xmlns="http://symfony.com/schema/dic/services" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="verclam.smart-fetch_value_resolver" class="Verclam\SmartFetchBundle\ArgumentResolver\SmartFetchArgumentResolver">
-            <tag name="Verclam\SmartFetchBundle\ArgumentResolver\SmartFetchArgumentResolver" priority="200">controller.argument_value_resolver</tag>
-            <argument type="service" id="verclam.smart-fetcher"/>
-        </service>
         <service id="verclam.smart-fetch_event_listerner" class="Verclam\SmartFetchBundle\EventListener\SmartFetchEventListener">
             <tag name="kernel.event_listener"/>
-            <argument type="service" id="verclam.smart-fetcher"/>
+            <argument type="service" id="verclam.smart-fetcher-entity-fetcher"/>
         </service>
-        <service id="verclam.smart-fetcher" class="Verclam\SmartFetchBundle\Services\SmartFetchEntityFetcher" autowire="true" public="false"/>
+        <service id="verclam.smart-fetcher.value-resolver" class="Verclam\SmartFetchBundle\Services\ArgumentResolver" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetcher-entity-fetcher"/>
+        </service>
+        <service id="verclam.smart-fetcher-entity-fetcher" class="Verclam\SmartFetchBundle\Services\SmartFetchEntityFetcher" autowire="true" public="false"/>
     </services>
 </container>
 

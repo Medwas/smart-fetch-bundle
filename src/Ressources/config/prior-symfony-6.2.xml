@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<container xmlns="http://symfony.com/schema/dic/services" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="verclam.smart-fetch.argument_value_resolver" class="Verclam\SmartFetchBundle\ArgumentValueResolver\SmartFetchArgumentValueResolver">
+            <tag name="Verclam\SmartFetchBundle\ArgumentValueResolver\SmartFetchArgumentValueResolver" priority="200">controller.argument_value_resolver</tag>
+            <argument type="service" id="verclam.smart-fetcher.value-resolver"/>
+        </service>
+    </services>
+</container>
+
