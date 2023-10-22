@@ -18,5 +18,11 @@
             $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Ressources/config'));
             $loader->load('services.xml');
 
+            if(interface_exists('Symfony\Component\HttpKernel\Controller\ValueResolverInterface')){
+                $loader->load('after-symfony-6.2.xml');
+            }else{
+                $loader->load('prior-symfony-6.2.xml');
+            }
+
         }
     }
