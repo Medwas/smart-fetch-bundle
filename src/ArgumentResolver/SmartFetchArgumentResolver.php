@@ -5,7 +5,6 @@
     use Symfony\Component\HttpFoundation\Request;
     use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
     use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
-    use Verclam\SmartFetchBundle\Attributes\SmartFetch;
     use Verclam\SmartFetchBundle\Services\ArgumentResolver;
 
     class SmartFetchArgumentResolver implements ValueResolverInterface

@@ -2,11 +2,11 @@
 
     namespace Verclam\SmartFetchBundle\Services;
 
+    use Doctrine\ORM\NonUniqueResultException;
+    use Doctrine\Persistence\ObjectRepository;
     use Symfony\Component\HttpFoundation\Request;
-    use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
     use Doctrine\Persistence\ManagerRegistry;
     use Doctrine\Persistence\ObjectManager;
-    use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
     use Doctrine\ORM\EntityNotFoundException;
     use Doctrine\ORM\QueryBuilder;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
@@ -15,7 +15,7 @@
     {
 
         private ObjectManager               $objectManager;
-        private ?ServiceEntityRepository    $repository = null;
+        private ?ObjectRepository           $repository = null;
         private ?string                     $entityName = null;
         private ?string                     $fullEntityName = null;
         
@@ -25,19 +25,26 @@
         {
         }
 
+        /**
+         * @throws EntityNotFoundException
+         * @throws NonUniqueResultException
+         */
         public function resolve(Request $request, SmartFetch $attribute): iterable
         {
-            if (\is_object($request->attributes->get($attribute->getQueryName()))) {
+            $queryName              = $attribute->getQueryName();
+            $queryValue             = $request->attributes->get($queryName);
+            $argumentName           = $attribute->getArgumentName();
+            $this->fullEntityName   = $attribute->getClass();
+
+            if (\is_object($queryValue)) {
                 return [];
             }
 
-            if ($attribute->getArgumentName() && \is_object($request->attributes->get($attribute->getArgumentName()))) {
+            if ($argumentName && \is_object($request->attributes->get($argumentName))) {
                 return [];
             }
 
-            $className = $attribute->getClass();
-
-            if (!$className) {
+            if (!$this->fullEntityName) {
                 return [];
             }
 
@@ -45,14 +52,11 @@
                 return [];
             }
 
-            $queryName  = $attribute->getQueryName();
-            $queryValue = $request->attributes->get($queryName);
-
             if(empty($queryValue)) {
                 throw new \LogicException(sprintf('Unable to guess how to get a Doctrine instance from the request information for parameter "%s".', $queryName));
             }
 
-            $this->generateEntityName($attribute);
+            $this->entityName  = $this->getEntityName();
 
             $this->repository   = $this
                 ->objectManager
@@ -65,6 +69,10 @@
             return [$entity];
         }
 
+        /**
+         * @throws NonUniqueResultException
+         * @throws EntityNotFoundException
+         */
         private function fetchEntity(
             string  $value,
             string  $valueName,
@@ -108,7 +116,7 @@
                 $joinAliases = [$joinAliases];
             }
 
-            foreach ($joinAliases as $key => $joinAlias) {
+            foreach ($joinAliases as $joinAlias) {
 
                 $joinAlias = str_contains($joinAlias, '.') ? explode('.',$joinAlias) : $joinAlias;
 
@@ -124,22 +132,21 @@
             return $queryBuilder;
         }
 
-        private function generateEntityName(SmartFetch $options): void
+        private function getEntityName(): string
         {
-            $this->fullEntityName = $options->getClass();
-
             if(!class_exists($this->fullEntityName)){
                 throw new \LogicException(sprintf('The class "%s" is incorrect', $this->fullEntityName));
             }
 
             $entityNameParts    = explode('\\', $this->fullEntityName);
-            $this->entityName   = end($entityNameParts);
+
+            return end($entityNameParts);
         }
 
         private function getManager(SmartFetch $configuration) : ?ObjectManager
         {
             if (null === $name = $configuration->getEntityManager()) {
-                return $this->registry->getManagerForClass($configuration->getClass());
+                return $this->registry->getManagerForClass($this->fullEntityName);
             }
 
             return $this->registry->getManager($name);
