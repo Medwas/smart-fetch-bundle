@@ -5,6 +5,7 @@
     #[\Attribute(\Attribute::TARGET_PARAMETER | \Attribute::TARGET_METHOD | \Attribute::IS_REPEATABLE)]
     class SmartFetch implements SmartFetchInterface
     {
+        private string|int $queryValue;
 
         public function __construct(
             private string $queryName,
@@ -86,5 +87,15 @@
         public function setQueryName(string $queryName): void
         {
             $this->queryName = $queryName;
+        }
+
+        public function getQueryValue(): int|string
+        {
+            return $this->queryValue;
+        }
+
+        public function setQueryValue(int|string $queryValue): void
+        {
+            $this->queryValue = $queryValue;
         }
     }
