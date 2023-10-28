@@ -2,6 +2,7 @@
 
     namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder;
 
+    use Exception;
     use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
     use Doctrine\Persistence\Mapping\ClassMetadata;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
@@ -24,15 +25,15 @@
         }
 
         /**
-         * @throws \Exception
+         * @throws Exception
          */
-        public function generate(ClassMetadata $classMetadata, SmartFetch $attribute, string $type, array $options = []): Component
+        public function generate(ClassMetadata $classMetadata, SmartFetch $smartFetch, string $type, array $options = []): Component
         {
             return match ($type) {
-                self::LEAF => $this->generateLeaf($classMetadata, $options),
+                self::LEAF      => $this->generateLeaf($classMetadata, $options),
                 self::COMPOSITE => $this->generateComposite($classMetadata, $options),
-                self::ROOT => $this->generateRoot($classMetadata, $attribute),
-                default => throw new \Exception('Unknown type')
+                self::ROOT      => $this->generateRoot($classMetadata, $smartFetch),
+                default         => throw new Exception('Unknown type')
             };
         }
 
@@ -57,20 +58,20 @@
         }
 
         /**
-         * @throws \Exception
+         * @throws Exception
          */
-        public function generateRoot(ClassMetadata $classMetadata, SmartFetch $attribute): Composite
+        public function generateRoot(ClassMetadata $classMetadata, SmartFetch $smartFetch): Composite
         {
-            $root = new Composite(true);
-            $rootAlias = $this->generateRootAlias($attribute);
+            $root      = new Composite(true);
+            $rootAlias = $this->generateRootAlias($smartFetch);
 
             //TODO: detect if the queryName is a property if not get the identificator
             $condition = $this->conditionFactory->generate(
                 [
                     'type'      => ConditionFactory::FILTER_BY,
-                    'property'  => $attribute->getQueryName(),
+                    'property'  => $smartFetch->getQueryName(),
                     'operator'  => Condition::EQUAL,
-                    'value'     => $attribute->getQueryValue()
+                    'value'     => $smartFetch->getQueryValue()
                 ]
             );
 
@@ -81,12 +82,10 @@
             return $root->addCondition($condition);
         }
 
-        private function generateRootAlias(SmartFetch $attribute): string
+        private function generateRootAlias(SmartFetch $smartFetch): string
         {
-            $entityNameParts    = explode('\\', $attribute->getClass());
+            $entityNameParts    = explode('\\', $smartFetch->getClass());
             $entityName         = end($entityNameParts);
             return strtolower($entityName);
         }
-
-
     }

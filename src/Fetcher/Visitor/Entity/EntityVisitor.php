@@ -88,6 +88,9 @@
 
         }
 
+        /**
+         * @throws \Exception
+         */
         private function refreshTree(Component $component): void
         {
             if(!($component instanceof Composite)){

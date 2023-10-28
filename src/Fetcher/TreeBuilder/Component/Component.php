@@ -2,6 +2,7 @@
 
     namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component;
 
+    use Error;
     use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
     use Doctrine\Persistence\Mapping\ClassMetadata;
     use Verclam\SmartFetchBundle\Fetcher\Condition\PropertyCondition;
@@ -166,4 +167,12 @@
             return $this;
         }
 
+        public static function expect($object): static
+        {
+            if (!is_a($object, static::class)) {
+                throw new Error(sprintf('Object must be a %s but got %s', static::class, $object::class));
+            }
+
+            return $object;
+        }
     }

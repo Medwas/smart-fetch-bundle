@@ -11,7 +11,7 @@
         {
             return match($options['type']) {
                 self::FILTER_BY => $this->generateFilterBy($options),
-                default => throw new \Exception('Unknown type')
+                default         => throw new \Exception('Unknown type')
             };
         }
 
