@@ -13,13 +13,6 @@
          * @var Component[]
          */
         private array $propertyPaths = [];
-//        private array $maxConfig = [
-//            SmartFetchObjectManager::ONE_TO_ONE => 0,
-//            SmartFetchObjectManager::MANY_TO_MANY => 0,
-//            SmartFetchObjectManager::MANY_TO_ONE => 0,
-//            SmartFetchObjectManager::ONE_TO_MANY => 0,
-//            SmartFetchObjectManager::SCALAR => 0
-//        ];
 
         public function add(Component $component): static
         {
@@ -75,50 +68,4 @@
             return count($this->propertyPaths);
         }
 
-//        public function getCurrentAddedRelationType(int $relationType): int
-//        {
-//            return $this->maxConfig[$relationType];
-//        }
-//
-//        public function getCurrentOneToOne(): int
-//        {
-//            return $this->maxConfig[SmartFetchObjectManager::ONE_TO_ONE];
-//        }
-//
-//        public function getCurrentManyToMany(): int
-//        {
-//            return $this->maxConfig[SmartFetchObjectManager::MANY_TO_MANY];
-//        }
-//
-//        public function getCurrentManyToOne(): int
-//        {
-//            return $this->maxConfig[SmartFetchObjectManager::MANY_TO_ONE];
-//        }
-//
-//        public function getCurrentOneToMany(): int
-//        {
-//            return $this->maxConfig[SmartFetchObjectManager::ONE_TO_MANY];
-//        }
-//
-//        public function getCurrentScalar(): int
-//        {
-//            return $this->maxConfig[SmartFetchObjectManager::SCALAR];
-//        }
-//
-//        public function getCurrentCountAdded(): int
-//        {
-//            return array_reduce($this->maxConfig, fn($carry, $item) => $carry + $item, 0);
-//        }
-//
-//        public function recoverLastState(): void
-//        {
-//            array_splice($this->propertyPaths, -$this->getCurrentCountAdded());
-//            $this->maxConfig = [
-//                SmartFetchObjectManager::ONE_TO_ONE => 0,
-//                SmartFetchObjectManager::MANY_TO_MANY => 0,
-//                SmartFetchObjectManager::MANY_TO_ONE => 0,
-//                SmartFetchObjectManager::ONE_TO_MANY => 0,
-//                SmartFetchObjectManager::SCALAR => 0
-//            ];
-//        }
     }

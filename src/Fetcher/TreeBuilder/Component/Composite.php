@@ -38,8 +38,6 @@ class Composite extends Component
     {
         if (!$this->isInitialized()) {
             $visitor->generate($this);
-        } else {
-            $visitor->addPath($this);
         }
 
         foreach ($this->children as $child) {

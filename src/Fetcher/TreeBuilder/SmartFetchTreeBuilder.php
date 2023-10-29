@@ -8,7 +8,6 @@ use RuntimeException;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\ComponentInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
 
 class SmartFetchTreeBuilder
