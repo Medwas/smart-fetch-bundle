@@ -79,8 +79,10 @@
         private function fetch(Component $component, QueryBuilder $queryBuilder): void
         {
             $result = match ($component->getRelationType()){
-                SmartFetchObjectManager::ONE_TO_ONE, SmartFetchObjectManager::MANY_TO_ONE => $queryBuilder->getQuery()->getOneOrNullResult(),
-                SmartFetchObjectManager::MANY_TO_MANY, SmartFetchObjectManager::ONE_TO_MANY => $queryBuilder->getQuery()->getResult(),
+                SmartFetchObjectManager::ONE_TO_ONE     => $queryBuilder->getQuery()->getOneOrNullResult(),
+                SmartFetchObjectManager::MANY_TO_MANY,
+                SmartFetchObjectManager::MANY_TO_ONE,
+                SmartFetchObjectManager::ONE_TO_MANY    => $queryBuilder->getQuery()->getResult(),
                 default => throw new \Exception('No fetch mode found'),
             };
 

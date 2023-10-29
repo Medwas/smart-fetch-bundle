@@ -12,8 +12,8 @@
     {
 
         public const ONE_TO_ONE = 1;
-        public const ONE_TO_MANY = 4;
-        public const MANY_TO_ONE = 2;
+        public const MANY_TO_ONE = 4;
+        public const ONE_TO_MANY = 2;
         public const MANY_TO_MANY = 8;
         public const SCALAR = 'scalar';
 

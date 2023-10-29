@@ -12,7 +12,62 @@
 
         public function hydrate(Component $component): void
         {
-            // TODO: Implement hydrate() method.
+
+            match (true){
+                is_array($component->getParentResult())     => $this->hydrateArray($component),
+                is_object($component->getParentResult())    => $this->hydrateEntity($component),
+            };
+
+
+        }
+
+        private function hydrateEntity(Component $childNode): void
+        {
+            $childResult    = $childNode->getResult();
+            $parentNode     = $childNode->getParent();
+            $parentEntity   = $parentNode->getResult();
+            $childProperty  = $childNode->getPropertyName();
+
+
+            $collection     = $parentNode
+                ->getReflectionProperty($childProperty)
+                ->getValue($parentEntity);
+
+            foreach($childResult as $child){
+                $collection->hydrateAdd($child);
+            }
+
+            $collection->setInitialized(true);
+            $collection->takeSnapshot();
+
+            $childNode->setHasBeenHydrated(true);
+        }
+
+        private function hydrateArray(Component $childNode): void
+        {
+            $childResult    = $childNode->getResult();
+            $parentNode     = $childNode->getParent();
+            $parentResults  = $parentNode->getResult();
+
+            $parentProperty     = $childNode->getParentProperty();
+            $childProperty      = $childNode->getPropertyName();
+
+            $parentPropertyReflexion    = $childNode->getReflectionProperty($parentProperty);
+            $childPropertyReflexion     = $parentNode->getReflectionProperty($childNode->getPropertyName());
+
+            foreach($childResult as $child){
+                $parentNode = $parentPropertyReflexion->getValue($child);
+                $collection = $childPropertyReflexion->getValue($parentNode);
+                $collection->hydrateAdd($child);
+            }
+
+            foreach ($parentResults as $parentResult){
+                $collection = $childPropertyReflexion->getValue($parentResult);
+                $collection->setInitialized(true);
+                $collection->takeSnapshot();
+            }
+
+            $childNode->setHasBeenHydrated(true);
         }
 
         public function support(Component $component, Configuration $configuration): bool

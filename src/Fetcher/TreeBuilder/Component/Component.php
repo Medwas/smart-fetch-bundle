@@ -14,7 +14,7 @@
         protected bool $isRoot;
         private bool $isInitialized = false;
         private bool $hasBeenHydrated = false;
-        private Composite $parent;
+        private ?Composite $parent = null;
         private ClassMetadata $classMetadata;
         private PropertyCondition $propertyCondition;
 
@@ -39,7 +39,7 @@
             return $this;
         }
 
-        public function getParent(): Composite
+        public function getParent(): ?Composite
         {
             return $this->parent;
         }
@@ -97,6 +97,11 @@
             return $this->propertyName;
         }
 
+        public function getReflectionProperty(string $propertyName): \ReflectionProperty
+        {
+            return $this->classMetadata->getReflectionProperty($propertyName);
+        }
+
         public function getResult(): null|object|array
         {
             return $this->result;
@@ -133,12 +138,12 @@
 
         public function isOwningSide(): bool
         {
-            return $this->propertyInformations['isOwningSide'];
+            return !$this->propertyInformations['isOwningSide'];
         }
 
         public function getParentProperty(): string
         {
-            return $this->isOwningSide()
+            return !$this->isOwningSide()
                 ? $this->propertyInformations['inversedBy']
                 : $this->propertyInformations['mappedBy'];
         }

@@ -28,7 +28,7 @@
         ): QueryBuilder
         {
             $this->lastJoined = $component;
-            $this->lastAlias  = $component->getPropertyName();
+            $this->lastAlias  = $component->getAlias();
 
             $queryBuilder = $this->addInverseSelect($queryBuilder);
 
@@ -37,7 +37,7 @@
                 $queryBuilder = $this->addInverseCondition($path, $queryBuilder);
 
                 if(!$this->lastJoined->isRoot()){
-                    $this->lastAlias  = $this->lastJoined->getParentProperty();
+                    $this->lastAlias  = $this->lastJoined->getParent()->getAlias();
                 }
 
                 $this->lastJoined = $path;
@@ -51,8 +51,9 @@
         private function addInverseJoin(Component $component, QueryBuilder $queryBuilder): QueryBuilder
         {
             $parentProperty = $this->lastJoined->getParentProperty();
+            $parentAlias = $this->lastJoined->getParent()->getAlias();
 
-            return $queryBuilder->leftJoin($this->lastAlias . '.' . $parentProperty, $parentProperty);
+            return $queryBuilder->leftJoin($this->lastAlias . '.' . $parentProperty, $parentAlias);
         }
 
         private function addInverseSelect(QueryBuilder $queryBuilder): QueryBuilder
@@ -65,20 +66,34 @@
                 return $queryBuilder;
             }
 
-            $parentProperty = $this->lastJoined->getParentProperty();
+            $parentAlias = $this->lastJoined->getParent()->getAlias();
 
-            return $queryBuilder->addSelect($parentProperty);
+            return $queryBuilder->addSelect($parentAlias);
         }
 
         private function addInverseCondition(Component $component , QueryBuilder $queryBuilder): QueryBuilder
         {
-            $parentProperty = $this->lastJoined->getParentProperty();
+            $parentAlias = $component->getAlias();
 
             foreach ($component->getPropertyCondition() as $condition){
                 $queryBuilder = $queryBuilder
-                    ->andWhere($parentProperty . '.' . $condition->property . $condition->operator . $condition->property)
+                    ->andWhere($parentAlias . '.' . $condition->property . $condition->operator . $condition->property)
                     ->setParameter($condition->property, $condition->value);
             }
             return $queryBuilder;
+        }
+
+        /**
+         * @throws \Exception
+         */
+        private function buildAlias(Component $component, QueryBuilder $queryBuilder): string
+        {
+           $parentProperty = $this->lastJoined->getParentProperty();
+           $allAliases = $queryBuilder->getAllAliases();
+           if(in_array($parentProperty, $allAliases)){
+               return $parentProperty . '_a';
+           }
+
+           return $parentProperty;
         }
     }

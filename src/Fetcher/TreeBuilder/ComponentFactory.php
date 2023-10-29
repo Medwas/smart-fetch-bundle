@@ -41,7 +41,7 @@
         {
             $leaf = new Leaf();
             $leaf->setClassMetadata($classMetadata);
-            $leaf->setAlias($options['fieldName']);
+            $leaf->setAlias($this->generateCommonAliases($options['fieldName']));
             $leaf->setPropertyName($options['fieldName']);
             $leaf->setPropertyInformations($options);
             return $leaf;
@@ -51,7 +51,7 @@
         {
             $composite = new Composite();
             $composite->setClassMetadata($classMetadata);
-            $composite->setAlias($options['fieldName']);
+            $composite->setAlias($this->generateCommonAliases($options['fieldName']));
             $composite->setPropertyName($options['fieldName']);
             $composite->setPropertyInformations($options);
             return $composite;
@@ -87,5 +87,12 @@
             $entityNameParts    = explode('\\', $smartFetch->getClass());
             $entityName         = end($entityNameParts);
             return strtolower($entityName);
+        }
+
+        private function generateCommonAliases(string $propertyName): string
+        {
+            //TODO: remove this line, and let it only for debug purpose;
+            return $propertyName . '_a' . rand(0, 1000);
+            return $propertyName[0] . $propertyName[-1] . '_a' . rand(0, 1000);
         }
     }

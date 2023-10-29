@@ -17,10 +17,10 @@
          */
         public function hydrate(Component $component): void
         {
-            if(!$component->isOwningSide()){
-                $component->setHasBeenHydrated(true);
-                return;
-            }
+//            if($component->isOwningSide()){
+//                $component->setHasBeenHydrated(true);
+//                return;
+//            }
 
             $result = $component->getResult();
             $parent = $component->getParent();

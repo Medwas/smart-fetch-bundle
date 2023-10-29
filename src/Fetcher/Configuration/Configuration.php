@@ -43,8 +43,8 @@ class Configuration
     {
         return match ($relationType) {
             SmartFetchObjectManager::MANY_TO_MANY => $this->maxManyToMany,
-            SmartFetchObjectManager::ONE_TO_MANY => $this->maxOneToMany,
-            SmartFetchObjectManager::MANY_TO_ONE => $this->maxManyToOne,
+            SmartFetchObjectManager::MANY_TO_ONE => $this->maxOneToMany,
+            SmartFetchObjectManager::ONE_TO_MANY => $this->maxManyToOne,
             SmartFetchObjectManager::ONE_TO_ONE => $this->maxOneToOne,
             SmartFetchObjectManager::SCALAR => $this->maxScalar,
             default => throw new \Error('Invalid relation type: ' . $relationType),
