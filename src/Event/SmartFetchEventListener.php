@@ -1,6 +1,6 @@
 <?php
 
-    namespace Verclam\SmartFetchBundle\EventListener;
+    namespace Verclam\SmartFetchBundle\Event;
 
     use ReflectionException;
     use Symfony\Component\HttpKernel\Event\ControllerEvent;

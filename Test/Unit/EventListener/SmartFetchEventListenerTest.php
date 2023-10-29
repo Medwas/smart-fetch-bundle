@@ -6,7 +6,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
-use Verclam\SmartFetchBundle\EventListener\SmartFetchEventListener;
+use Verclam\SmartFetchBundle\Event\SmartFetchEventListener;
 use Verclam\SmartFetchBundle\Services\SmartFetchEntityFetcher;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpFoundation\Request;
