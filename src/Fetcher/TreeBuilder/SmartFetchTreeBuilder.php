@@ -2,10 +2,16 @@
 
 namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder;
 
+use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\Persistence\Mapping\ClassMetadata;
 use Error;
 use Exception;
+use ReflectionException;
 use RuntimeException;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
+use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
+use Verclam\SmartFetchBundle\Attributes\SmartFetchSerialize;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
@@ -22,11 +28,19 @@ class SmartFetchTreeBuilder
     /**
      * @throws Exception
      */
-    public function buildTree(SmartFetch $smartFetch, Configuration $configuration): Composite
+    public function buildTree(SmartFetchInterface $smartFetch, Configuration $configuration): Composite
     {
-        $joinEntities   = $smartFetch->getJoinEntities();
-        $arrayTree      = $this->buildArrayTree($joinEntities);
         $classMetaData  = $this->objectManager->getClassMetadata($smartFetch->getClass());
+
+        if ($smartFetch instanceof SmartFetch) {
+            $joinEntities   = $smartFetch->getJoinEntities();
+        }
+
+        $arrayTree = match (true) {
+            $smartFetch instanceof SmartFetch           => $this->buildArrayTree($joinEntities),
+            $smartFetch instanceof SmartFetchSerialize  => $this->buildArrayTreeForSerialization($smartFetch->getGroups(), $classMetaData),
+        };
+ 
         $parent         = $this->componentFactory->generate($classMetaData, $smartFetch, ComponentFactory::ROOT);
         $parent         = Composite::expect($parent);
 
@@ -47,9 +61,9 @@ class SmartFetchTreeBuilder
      * @throws Exception
      */
     private function buildEntityComponentTree(
-        array              $orderedArray,
-        Composite          $component,
-        SmartFetch         $smartFetch
+        array               $orderedArray,
+        Composite           $component,
+        SmartFetchInterface $smartFetch
     ): void
     {
         $metadata = $component->getClassMetadata();
@@ -115,4 +129,43 @@ class SmartFetchTreeBuilder
         return $parent;
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws MappingException
+     */
+    private function buildArrayTreeForSerialization(
+        array         $serializeGroups,
+        ClassMetadata $metadata,
+        array         &$visited = [],
+    ): array
+    {
+        $result = [];
+
+        foreach ($metadata->getAssociationNames() as $associationName) {
+            if (in_array($associationName, $visited, true)) {
+                continue;
+            }
+
+            $reflectionProperty = $metadata->getReflectionClass()->getProperty($associationName);
+            $attribute          = $reflectionProperty->getAttributes(Groups::class); // Attribute is not "IS_REPEATABLE" but it works, for now we just take the first one
+
+            if (count($attribute) === 0) {
+                continue;
+            }
+
+            $argument = $attribute[0]->getArguments()[0]; // Groups has only one argument which can be string|array
+            $groups = is_string($argument) ? [$argument] : $argument;
+
+            if (array_intersect($serializeGroups, $groups) !== $serializeGroups) {
+                continue;
+            }
+
+            $associationMapping         = $metadata->getAssociationMapping($associationName);
+            $visited[]                  = $associationMapping['mappedBy'];
+            $classMetaData              = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
+            $result[$associationName]   = $this->buildArrayTreeForSerialization($serializeGroups, $classMetaData, $visited);
+        }
+
+        return $result;
+    }
 }

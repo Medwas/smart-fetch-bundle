@@ -5,6 +5,7 @@
     use ReflectionException;
     use Symfony\Component\HttpKernel\Event\ControllerEvent;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
+    use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
     use Verclam\SmartFetchBundle\Services\SmartFetchEntityFetcher;
 
     class SmartFetchEventListener
@@ -40,7 +41,7 @@
                 function (\ReflectionAttribute $attribute) {
                     return $attribute->newInstance();
                 },
-                $method->getAttributes(SmartFetch::class, \ReflectionAttribute::IS_INSTANCEOF)
+                $method->getAttributes(SmartFetchInterface::class, \ReflectionAttribute::IS_INSTANCEOF)
             );
 
             foreach ($methodAttributes as $attribute) {

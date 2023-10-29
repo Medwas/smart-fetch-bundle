@@ -6,6 +6,7 @@
     use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
     use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
+    use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
     use Verclam\SmartFetchBundle\Services\ArgumentResolver;
 
     class SmartFetchArgumentValueResolver implements ArgumentValueResolverInterface
@@ -24,10 +25,10 @@
 
         public function supports(Request $request, ArgumentMetadata $argument): bool
         {
-            $options = $argument->getAttributes(SmartFetch::class, ArgumentMetadata::IS_INSTANCEOF);
+            $options = $argument->getAttributes(SmartFetchInterface::class, ArgumentMetadata::IS_INSTANCEOF);
             $options = $options[0] ?? null;
 
-            return $options instanceof SmartFetch;
+            return $options instanceof SmartFetchInterface;
         }
 
     }

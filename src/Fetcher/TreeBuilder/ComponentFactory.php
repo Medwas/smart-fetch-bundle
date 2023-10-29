@@ -3,6 +3,7 @@
     namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder;
 
     use Exception;
+    use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
     use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
     use Doctrine\Persistence\Mapping\ClassMetadata;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
@@ -27,7 +28,7 @@
         /**
          * @throws Exception
          */
-        public function generate(ClassMetadata $classMetadata, SmartFetch $smartFetch, string $type, array $options = []): Component
+        public function generate(ClassMetadata $classMetadata, SmartFetchInterface $smartFetch, string $type, array $options = []): Component
         {
             return match ($type) {
                 self::LEAF      => $this->generateLeaf($classMetadata, $options),
@@ -60,7 +61,7 @@
         /**
          * @throws Exception
          */
-        public function generateRoot(ClassMetadata $classMetadata, SmartFetch $smartFetch): Composite
+        public function generateRoot(ClassMetadata $classMetadata, SmartFetchInterface $smartFetch): Composite
         {
             $root      = new Composite(true);
             $rootAlias = $this->generateRootAlias($smartFetch);
@@ -82,7 +83,7 @@
             return $root->addCondition($condition);
         }
 
-        private function generateRootAlias(SmartFetch $smartFetch): string
+        private function generateRootAlias(SmartFetchInterface $smartFetch): string
         {
             $entityNameParts    = explode('\\', $smartFetch->getClass());
             $entityName         = end($entityNameParts);

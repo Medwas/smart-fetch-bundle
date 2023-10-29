@@ -7,6 +7,7 @@
     use Doctrine\Persistence\Mapping\ClassMetadata;
     use Doctrine\ORM\QueryBuilder;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
+    use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 
     class SmartFetchObjectManager
     {
@@ -35,10 +36,10 @@
             return $this->objectManager;
         }
 
-        public function initObjectManager(SmartFetch $configuration): ?ObjectManager
+        public function initObjectManager(SmartFetchInterface $smartFetch): ?ObjectManager
         {
-            if (null === $name = $configuration->getEntityManager()) {
-                return $this->objectManager = $this->registry->getManagerForClass($configuration->getClass());
+            if (null === $name = $smartFetch->getEntityManager()) {
+                return $this->objectManager = $this->registry->getManagerForClass($smartFetch->getClass());
             }
 
             return $this->objectManager = $this->registry->getManager($name);

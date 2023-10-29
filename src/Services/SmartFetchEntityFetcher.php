@@ -5,6 +5,7 @@ namespace Verclam\SmartFetchBundle\Services;
 use Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
+use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder;
@@ -35,7 +36,7 @@ class SmartFetchEntityFetcher
      * @return iterable
      * @throws Exception
      */
-    public function resolve(Request $request, SmartFetch $smartFetch): iterable
+    public function resolve(Request $request, SmartFetchInterface $smartFetch): iterable
     {
         $queryName = $smartFetch->getQueryName();
         $queryValue = $request->attributes->get($queryName);
