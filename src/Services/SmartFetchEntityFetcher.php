@@ -6,6 +6,7 @@ use Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
+use Verclam\SmartFetchBundle\Enum\FetchModeEnum;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder;
@@ -36,7 +37,7 @@ class SmartFetchEntityFetcher
      * @return iterable
      * @throws Exception
      */
-    public function resolve(Request $request, SmartFetchInterface $smartFetch): iterable
+    public function resolve(Request $request, SmartFetch $smartFetch): iterable
     {
         $queryName = $smartFetch->getQueryName();
         $queryValue = $request->attributes->get($queryName);
@@ -64,9 +65,9 @@ class SmartFetchEntityFetcher
         }
 
         //todo add the configuration
-        $this->configuration->configure(['fetchMode' => Configuration::ENTITY_FETCH_MODE]);
+        $this->configuration->configure(['fetchMode' => FetchModeEnum::ENTITY]);
 
-        $tree = $this->treeBuilder->buildTree($smartFetch, $this->configuration);
+        $tree = $this->treeBuilder->buildTree($smartFetch);
 
         foreach ($this->visitors as $visitor) {
             if (!$visitor->support($this->configuration)) {

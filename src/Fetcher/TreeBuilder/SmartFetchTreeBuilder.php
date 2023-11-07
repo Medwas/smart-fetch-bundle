@@ -10,17 +10,16 @@ use ReflectionException;
 use RuntimeException;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
-use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
-use Verclam\SmartFetchBundle\Attributes\SmartFetchSerialize;
-use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\TreeBuilderHandler;
 
 class SmartFetchTreeBuilder
 {
     public function __construct(
         private readonly SmartFetchObjectManager $objectManager,
         private readonly ComponentFactory        $componentFactory,
+        private readonly TreeBuilderHandler      $treeBuilderHandler,
     )
     {
     }
@@ -28,31 +27,20 @@ class SmartFetchTreeBuilder
     /**
      * @throws Exception
      */
-    public function buildTree(SmartFetchInterface $smartFetch, Configuration $configuration): Composite
+    public function buildTree(SmartFetch $smartFetch): Composite
     {
-        $classMetaData  = $this->objectManager->getClassMetadata($smartFetch->getClass());
+        $classMetaData = $this->objectManager->getClassMetadata($smartFetch->getClass());
 
-        if ($smartFetch instanceof SmartFetch) {
-            $joinEntities   = $smartFetch->getJoinEntities();
-        }
-
-        $arrayTree = match (true) {
-            $smartFetch instanceof SmartFetch           => $this->buildArrayTree($joinEntities),
-            $smartFetch instanceof SmartFetchSerialize  => $this->buildArrayTreeForSerialization($smartFetch->getGroups(), $classMetaData),
-        };
- 
-        $parent         = $this->componentFactory->generate($classMetaData, $smartFetch, ComponentFactory::ROOT);
-        $parent         = Composite::expect($parent);
+        $arrayTree = $this->treeBuilderHandler->handle($smartFetch, $classMetaData);
+        dd($arrayTree);
+        $parent = $this->componentFactory->generate($classMetaData, $smartFetch, ComponentFactory::ROOT);
+        $parent = Composite::expect($parent);
 
         if (!($parent->isRoot())) {
             throw new Error('First parent must be a root');
         }
 
-        //TODO: add support for the other fetch modes
-        match ($configuration->getFetchMode()) {
-            Configuration::ENTITY_FETCH_MODE => $this->buildEntityComponentTree($arrayTree, $parent, $smartFetch),
-            default                          => throw new Error('Invalid fetch mode: ' . $configuration->getFetchMode()),
-        };
+        $this->buildEntityComponentTree($arrayTree, $parent, $smartFetch);
 
         return $parent;
     }
@@ -61,9 +49,9 @@ class SmartFetchTreeBuilder
      * @throws Exception
      */
     private function buildEntityComponentTree(
-        array               $orderedArray,
-        Composite           $component,
-        SmartFetchInterface $smartFetch
+        array      $orderedArray,
+        Composite  $component,
+        SmartFetch $smartFetch
     ): void
     {
         $metadata = $component->getClassMetadata();
@@ -74,7 +62,7 @@ class SmartFetchTreeBuilder
             }
 
             $associationMapping = $metadata->getAssociationMapping($parent);
-            $classMetaData      = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
+            $classMetaData = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
 
             if (count($children) === 0) {
                 $child = $this->componentFactory->generate($classMetaData, $smartFetch, ComponentFactory::LEAF, $associationMapping);
@@ -88,84 +76,5 @@ class SmartFetchTreeBuilder
             $component->addChild($composite);
             $this->buildEntityComponentTree($children, $composite, $smartFetch);
         }
-    }
-
-    private function buildArrayTree(array &$joinEntities, array &$parent = []): array
-    {
-        foreach ($joinEntities as $key => $joinEntity) {
-            if (count($joinEntities) === 0) {
-                return $parent;
-            }
-
-            $entities = explode('.', $joinEntity);
-
-            if (count($entities) === 1) {
-                [$field] = $entities;
-                $parent[$field] = [];
-                unset($joinEntities[$key]);
-                $parent = $this->buildArrayTree($joinEntities, $parent);
-                continue;
-            }
-
-            if (count($entities) > 2) {
-                throw new RuntimeException('Invalid expression, you should not have more than this : field.subfield');
-            }
-
-            [$field, $subField] = $entities; // field.subField
-
-            if (key_exists($field, $parent)) {
-                $parent[$field][$subField] = [];
-                unset($joinEntities[$key]);
-                $parent[$field] = $this->buildArrayTree($joinEntities, $parent[$field]);
-                continue;
-            }
-
-            foreach ($parent as $keyInner => $parentValue) {
-                $parent[$keyInner] = $this->buildArrayTree($joinEntities, $parent[$keyInner]);
-            }
-
-        }
-
-        return $parent;
-    }
-
-    /**
-     * @throws ReflectionException
-     * @throws MappingException
-     */
-    private function buildArrayTreeForSerialization(
-        array         $serializeGroups,
-        ClassMetadata $metadata,
-        array         &$visited = [],
-    ): array
-    {
-        $result = [];
-
-        foreach ($metadata->getAssociationNames() as $associationName) {
-            if (in_array($associationName, $visited, true)) {
-                continue;
-            }
-
-            $reflectionProperty = $metadata->getReflectionClass()->getProperty($associationName);
-            $attribute          = $reflectionProperty->getAttributes(Groups::class); // Attribute is not "IS_REPEATABLE" but it works, for now we just take the first one
-
-            if (count($attribute) === 0) {
-                continue;
-            }
-
-            $argument = $attribute[0]->getArguments()[0]; // Groups has only one argument which can be string|array
-            $groups = is_string($argument) ? [$argument] : $argument;
-
-            if (array_intersect($serializeGroups, $groups) !== $serializeGroups) {
-                continue;
-            }
-
-            $associationMapping         = $metadata->getAssociationMapping($associationName);
-            $visited[]                  = $associationMapping['mappedBy'];
-            $classMetaData              = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
-            $result[$associationName]   = $this->buildArrayTreeForSerialization($serializeGroups, $classMetaData, $visited);
-        }
-
-        return $result;
     }
 }

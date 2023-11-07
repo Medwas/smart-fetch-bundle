@@ -31,6 +31,7 @@
             }
 
             $options->setClass($className);
+            $options->setArgumentName($argument->getName());
 
             return $this->entityFetcher->resolve($request, $options);
         }
