@@ -2,6 +2,7 @@
 
 namespace Verclam\SmartFetchBundle\Fetcher\Configuration;
 
+use Verclam\SmartFetchBundle\Enum\FetchModeEnum;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 
 class Configuration
@@ -13,7 +14,7 @@ class Configuration
     public const DTO_FETCH_MODE = 'dto';
 
     private array $defaultOptions = [];
-    private string $fetchMode;
+    private FetchModeEnum $fetchMode;
 
     //TODO: add variable from yaml or from smartFetchAttribute
     public function __construct(
@@ -94,12 +95,12 @@ class Configuration
         }
     }
 
-    public function getFetchMode(): string
+    public function getFetchMode(): FetchModeEnum
     {
         return $this->fetchMode;
     }
 
-    public function hasFetchMode(string $fetchMode): bool
+    public function hasFetchMode(FetchModeEnum $fetchMode): bool
     {
         return $this->fetchMode === $fetchMode;
     }

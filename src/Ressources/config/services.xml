@@ -24,6 +24,7 @@
         <service id="verclam.smart-fetch.component-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetch.object-manager"/>
             <argument type="service" id="verclam.smart-fetch.component-factory"/>
+            <argument type="service" id="verclam.smart-fetch.tree-builder-handler"/>
         </service>
 
         <service id="verclam.smart-fetch.entity-reverse-query-generator" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityReverseQueryBuilderGenerator" autowire="true" public="false">
@@ -55,6 +56,22 @@
             <argument type="service" id="verclam.smart-fetch.component-tree-builder"/>
             <argument type="iterator">
                 <argument type="service" id="verclam.smart-fetch.entity-visitor"/>
+            </argument>
+        </service>
+
+        <service id="verclam.smart-fetch.abstract-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\AbstractTreeBuilder" autowire="true" public="false" abstract="true">
+            <argument type="service" id="verclam.smart-fetch.object-manager"/>
+        </service>
+
+        <service id="verclam.smart-fetch.array-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\ArrayTreeBuilder" autowire="true" public="false" parent="verclam.smart-fetch.abstract-tree-builder"/>
+        <service id="verclam.smart-fetch.dto-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\DTOTreeBuilder" autowire="true" public="false"  parent="verclam.smart-fetch.abstract-tree-builder" />
+        <service id="verclam.smart-fetch.entity-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\EntityTreeBuilder" autowire="true" public="false"  parent="verclam.smart-fetch.abstract-tree-builder"/>
+
+        <service id="verclam.smart-fetch.tree-builder-handler" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\TreeBuilderHandler">
+            <argument type="iterator">
+                <argument type="service" id="verclam.smart-fetch.entity-tree-builder"/>
+                <argument type="service" id="verclam.smart-fetch.array-tree-builder"/>
+                <argument type="service" id="verclam.smart-fetch.dto-tree-builder"/>
             </argument>
         </service>
     </services>

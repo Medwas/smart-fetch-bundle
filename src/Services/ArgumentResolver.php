@@ -5,6 +5,7 @@
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
     use Symfony\Component\HttpFoundation\Request;
     use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
+    use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 
     class ArgumentResolver
     {
@@ -16,10 +17,10 @@
 
         public function resolve(Request $request, ArgumentMetadata $argument): iterable
         {
-            $options = $argument->getAttributes(SmartFetch::class, ArgumentMetadata::IS_INSTANCEOF);
+            $options = $argument->getAttributes(SmartFetchInterface::class, ArgumentMetadata::IS_INSTANCEOF);
             $options = $options[0] ?? null;
 
-            if (!($options instanceof SmartFetch)) {
+            if (!($options instanceof SmartFetchInterface)) {
                 return [];
             }
 
@@ -30,6 +31,7 @@
             }
 
             $options->setClass($className);
+            $options->setArgumentName($argument->getName());
 
             return $this->entityFetcher->resolve($request, $options);
         }

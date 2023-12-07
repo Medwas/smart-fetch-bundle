@@ -3,6 +3,7 @@
     namespace Verclam\SmartFetchBundle\Fetcher\Visitor\Entity;
 
     use Doctrine\ORM\QueryBuilder;
+    use Verclam\SmartFetchBundle\Enum\FetchModeEnum;
     use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
     use Verclam\SmartFetchBundle\Fetcher\Hydrator\HydratorContainer;
     use Verclam\SmartFetchBundle\Fetcher\PropertyPaths\PropertyPaths;
@@ -34,7 +35,7 @@
 
         public function support(Configuration $configuration): bool
         {
-            return $configuration->hasFetchMode(Configuration::ENTITY_FETCH_MODE);
+            return $configuration->hasFetchMode(FetchModeEnum::ENTITY);
         }
 
         /**
