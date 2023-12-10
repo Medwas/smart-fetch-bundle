@@ -9,8 +9,8 @@ use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 use Verclam\SmartFetchBundle\Enum\FetchModeEnum;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-use Verclam\SmartFetchBundle\Fetcher\ResultsJoiner\Array\ResultsJoiner;
-use Verclam\SmartFetchBundle\Fetcher\ResultsJoiner\ResultsJoinerInterface;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\ResultsProcessorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
@@ -75,7 +75,7 @@ class SmartFetchEntityFetcher
             if (!$visitor->support($smartFetch)) {
                 continue;
             }
-            $visitor->start($tree);
+            $visitor->visit($tree);
             break;
         }
 

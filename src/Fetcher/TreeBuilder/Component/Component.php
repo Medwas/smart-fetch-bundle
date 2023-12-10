@@ -158,9 +158,6 @@
             return $this->classMetadata->getName();
         }
 
-        abstract public function handle(SmartFetchVisitorInterface $visitor): void;
-        abstract public function isComposite(): bool;
-
         public function hasBeenHydrated(): bool
         {
             return $this->hasBeenHydrated;
@@ -185,4 +182,7 @@
         {
             return $this->propertyName;
         }
+
+        abstract public function handle(SmartFetchVisitorInterface $visitor): void;
+        abstract public function isComposite(): bool;
     }

@@ -1,30 +1,26 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\ResultsJoiner\Array;
+namespace Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array;
 
 use Exception;
+use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-use Verclam\SmartFetchBundle\Fetcher\PropertyPaths\PropertyPaths;
-use Verclam\SmartFetchBundle\Fetcher\ResultsJoiner\ResultsJoinerInterface;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\ResultsProcessorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
 
-class ResultsJoiner implements ResultsJoinerInterface
+class ResultsProcessor implements ResultsProcessorInterface
 {
-    private ?PropertyPaths $history = null;
+    private ?HistoryPaths $history = null;
 
     public function __construct()
     {
-        $this->history = new PropertyPaths();
+        $this->history = new HistoryPaths();
     }
 
     /**
-     * This function will be first called with the root node
-     * and it will be called recursively with every non scalar child node,
-     * the objectives of this function is to join the result of every child node
-     * with the result of the root node.
      * @throws Exception
      */
-    public function joinResult(Component $component, array &$result = []): array
+    public function processResult(Component $component, array &$result = []): array
     {
         if($component->isRoot()){
             $result = $component->getResult();
@@ -42,7 +38,7 @@ class ResultsJoiner implements ResultsJoinerInterface
                 }
 
                 $this->join($child, $this->history, $result);
-                $this->joinResult($child, $result);
+                $this->processResult($child, $result);
             }
 
             $this->history->removeLast();
@@ -54,7 +50,7 @@ class ResultsJoiner implements ResultsJoinerInterface
     /**
      * @throws Exception
      */
-    private function join(Component $component, PropertyPaths $paths, array &$result = []): void
+    private function join(Component $component, HistoryPaths $paths, array &$result = []): void
     {
         match ($component->getParent()->isRoot()){
             true     => $this->joinRootResult($component, $result),
@@ -79,12 +75,12 @@ class ResultsJoiner implements ResultsJoinerInterface
      * using the property paths as a history to know the path needed to reach the right place
      * where we need to join the child result, in the final the parent result of the root node will be updated
      * @param Component $childNode
-     * @param PropertyPaths $history
+     * @param HistoryPaths $history
      * @param array $parentResults
      * @return void
      * @throws Exception
      */
-    private function prepareAndJoinChildResult(Component $childNode, PropertyPaths $history, array &$parentResults): void
+    private function prepareAndJoinChildResult(Component $childNode, HistoryPaths $history, array &$parentResults): void
     {
         //if there is no history, that means we are in a direct child of the root node
         //so it will be easy to join the child result with the parent result
@@ -128,7 +124,7 @@ class ResultsJoiner implements ResultsJoinerInterface
      * that has been added in every child result
      * @throws Exception
      */
-    private function joinChildResult(Component $childNode, PropertyPaths $paths, array &$parentResults): void
+    private function joinChildResult(Component $childNode, HistoryPaths $paths, array &$parentResults): void
     {
         //if the parent result is empty, we don't need to join anything
         if(count($parentResults) === 0){

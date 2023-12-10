@@ -4,12 +4,10 @@
 
     use Doctrine\ORM\QueryBuilder;
     use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
-    use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
+    use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
     use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-    use Verclam\SmartFetchBundle\Fetcher\PropertyPaths\PropertyPaths;
     use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\QueryBuilderGeneratorInterface;
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
-    use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
 
     class EntityQueryBuilderGenerator implements QueryBuilderGeneratorInterface
     {
@@ -23,7 +21,7 @@
         {
         }
 
-        public function generate(Component $component , PropertyPaths $paths): QueryBuilder
+        public function generate(Component $component , HistoryPaths $paths): QueryBuilder
         {
             $queryBuilder = match($component->isRoot()) {
                 true        => $this->buildRootQueryBuilder($component),
@@ -46,7 +44,7 @@
             return $queryBuilder;
         }
 
-        private function buildComponentQueryBuilder(Component $component, PropertyPaths $paths): QueryBuilder
+        private function buildComponentQueryBuilder(Component $component, HistoryPaths $paths): QueryBuilder
         {
             $parent = $component->getParent();
 

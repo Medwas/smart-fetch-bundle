@@ -20,6 +20,7 @@ class ArrayTreeBuilder extends AbstractTreeBuilder
      */
     protected function buildTreeAssociations(array &$mappers, ClassMetadata $classMetadata): array
     {
+        //TODO: has to be done in tree association mode
         $result     = [];
 
         [
@@ -88,6 +89,7 @@ class ArrayTreeBuilder extends AbstractTreeBuilder
                 continue;
             }
 
+            //Association
             if($classMetadata->hasAssociation($fieldName)){
                 $associationMapping = $classMetadata->getAssociationMapping($fieldName);
                 $visited[]          = $associationMapping['mappedBy'];
@@ -96,6 +98,7 @@ class ArrayTreeBuilder extends AbstractTreeBuilder
                 continue;
             }
 
+            //Scalar
             $result[$fieldName] = [];
         }
 

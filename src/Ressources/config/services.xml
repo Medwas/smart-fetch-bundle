@@ -15,7 +15,7 @@
         <service id="verclam.smart-fetch.entity-one-to-one-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Entity\OneToOneHydratorEntity" autowire="true" public="false" />
         <service id="verclam.smart-fetch.entity-many-to-one-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Entity\ManyToOneHydratorEntity" autowire="true" public="false" />
 
-        <service id="verclam.smart-fetch.array-results-joiner" class="Verclam\SmartFetchBundle\Fetcher\ResultsJoiner\Array\ResultsJoiner" autowire="true" public="false" />
+        <service id="verclam.smart-fetch.array-results-processor" class="Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor" autowire="true" public="false" />
 
         <service id="verclam.smart-fetch.component-factory" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\ComponentFactory" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetch.condition-factory"/>
@@ -64,9 +64,8 @@
         </service>
 
         <service id="verclam.smart-fetch.array-visitor" class="Verclam\SmartFetchBundle\Fetcher\Visitor\Array\ArrayVisitor" >
-            <argument type="service" id="verclam.smart-fetch.configuration"/>
             <argument type="service" id="verclam.smart-fetch.array-query-generator"/>
-            <argument type="service" id="verclam.smart-fetch.array-results-joiner"/>
+            <argument type="service" id="verclam.smart-fetch.array-results-processor"/>
         </service>
 
         <service id="verclam.smart-fetcher.value-resolver" class="Verclam\SmartFetchBundle\Services\ArgumentResolver" autowire="true" public="false">

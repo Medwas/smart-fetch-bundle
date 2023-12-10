@@ -20,6 +20,6 @@
 
         public function handle(SmartFetchVisitorInterface $visitor): void
         {
-            $visitor->generate($this);
+            $visitor->fetchResult($this);
         }
     }

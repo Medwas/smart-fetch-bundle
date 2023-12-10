@@ -37,7 +37,7 @@ class Composite extends Component
     public function handle(SmartFetchVisitorInterface $visitor): void
     {
         if (!$this->isInitialized()) {
-            $visitor->generate($this);
+            $visitor->fetchResult($this);
         }
 
         foreach ($this->children as $child) {
@@ -47,9 +47,12 @@ class Composite extends Component
             $child->handle($visitor);
         }
         
-        
+        //If this is a root node, it mean's here that
+        //we reached the end of the tree, so we can now process the results
+        //for example in arrayMode, we need to join the results
+        // of all the nodes to the root node.
         if($this->isRoot()){
-            $visitor->joinResult($this);
+            $visitor->processResults($this);
         }
     }
 }

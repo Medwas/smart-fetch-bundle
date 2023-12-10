@@ -3,8 +3,8 @@
     namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity;
 
     use Doctrine\ORM\QueryBuilder;
+    use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
     use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-    use Verclam\SmartFetchBundle\Fetcher\PropertyPaths\PropertyPaths;
     use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\QueryBuilderReverseGeneratorInterface;
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\ComponentFactory;
@@ -23,7 +23,7 @@
 
         public function generate(
             Component $component ,
-            PropertyPaths $paths,
+            HistoryPaths $paths,
             QueryBuilder $queryBuilder,
         ): QueryBuilder
         {
