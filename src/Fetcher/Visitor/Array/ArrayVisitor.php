@@ -97,6 +97,17 @@
                 false       => $queryBuilder->getQuery()->getResult(),
             };
 
+            //in case when we have a single result and every field is null
+            //that means no resul so we do it manually to an empty array
+            if(count($result) === 1){
+                foreach ($result[0] as $property){
+                    if(!is_null($property)){
+                        break;
+                    }
+                }
+                $result = [];
+            }
+
             $component->setResult($result);
         }
 

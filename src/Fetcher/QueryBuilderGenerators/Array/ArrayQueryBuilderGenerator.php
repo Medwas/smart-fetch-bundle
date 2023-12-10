@@ -3,6 +3,7 @@
     namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array;
 
     use Doctrine\ORM\QueryBuilder;
+    use Exception;
     use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
     use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
     use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
@@ -23,7 +24,7 @@
         {
         }
 
-        public function generate(Component $component , PropertyPaths $paths): QueryBuilder
+        public function generate(Component $component, PropertyPaths $paths): QueryBuilder
         {
             $queryBuilder = match($component->isRoot()) {
                 true        => $this->buildRootQueryBuilder($component),
@@ -46,6 +47,9 @@
             return $queryBuilder;
         }
 
+        /**
+         * @throws Exception
+         */
         private function buildComponentQueryBuilder(Component $component, PropertyPaths $paths): QueryBuilder
         {
             $parent = $component->getParent();
@@ -86,6 +90,9 @@
             return $selector;
         }
 
+        /**
+         * @throws Exception
+         */
         private function addSelect(Component $component, QueryBuilder $queryBuilder): QueryBuilder
         {
             if($component->getParent()->isRoot()){
@@ -94,18 +101,18 @@
             
             $parent = $this->lastJoined;
 
-            $identificatorProperty = $parent->getClassMetadata()->getIdentifier();
+            $identifierProperty = $parent->getClassMetadata()->getIdentifier();
 
-            if(count($identificatorProperty) > 1){
-                throw new \Exception('Composite keys are not supported');
+            if(count($identifierProperty) > 1){
+                throw new Exception('Composite keys are not supported, Doctrine\'s best practice, says that it is better to avoid using it');
             }
 
-            $identificatorProperty = $identificatorProperty[0];
+            $identifierProperty = $identifierProperty[0];
 
-            $identificatorField = $parent->getAlias() . '.' . $identificatorProperty;
-            $identificatorAlias = $parent->getAlias() . '_' . $identificatorProperty;
+            $identifierField = $parent->getAlias() . '.' . $identifierProperty;
+            $identifierAlias = $parent->getAlias() . '_' . $identifierProperty;
 
-            return $queryBuilder->addSelect("$identificatorField as $identificatorAlias");
+            return $queryBuilder->addSelect("$identifierField as $identifierAlias");
         }
 
         private function addJoin(Component $component, QueryBuilder $queryBuilder): QueryBuilder

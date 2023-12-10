@@ -7,5 +7,5 @@ use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
 
 interface ResultsJoinerInterface
 {
-    function joinResult(Component $component, array &$result = []): array;
+    public function joinResult(Component $component, array &$result = []): array;
 }
