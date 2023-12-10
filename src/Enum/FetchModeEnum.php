@@ -6,6 +6,5 @@ enum FetchModeEnum
 {
     case ENTITY;
     case ARRAY;
-
     case DTO;
 }

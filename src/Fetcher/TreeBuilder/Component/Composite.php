@@ -41,7 +41,15 @@ class Composite extends Component
         }
 
         foreach ($this->children as $child) {
+            if($child->isScalar()){
+                continue;
+            }
             $child->handle($visitor);
+        }
+        
+        
+        if($this->isRoot()){
+            $visitor->joinResult($this);
         }
     }
 }

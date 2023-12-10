@@ -180,4 +180,9 @@
 
             return $object;
         }
+
+        public function __toString(): string
+        {
+            return $this->propertyName;
+        }
     }

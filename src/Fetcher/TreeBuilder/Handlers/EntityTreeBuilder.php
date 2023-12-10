@@ -21,6 +21,9 @@ class EntityTreeBuilder extends AbstractTreeBuilder
         return $this->buildArrayTree($mappers);
     }
 
+    /**
+     * @throws ReflectionException
+     */
     protected function buildTreeSerializationGroups(array &$mappers, ClassMetadata $classMetadata): array
     {
        return $this->buildArrayTreeForSerialization($mappers, $classMetadata);
@@ -82,7 +85,7 @@ class EntityTreeBuilder extends AbstractTreeBuilder
                 continue;
             }
 
-            $reflectionProperty = $metadata->getReflectionClass()->getProperty($associationName);
+            $reflectionProperty = $metadata->getReflectionProperty($associationName);
             $attribute = $reflectionProperty->getAttributes(Groups::class); // Attribute is not "IS_REPEATABLE" but it works, for now we just take the first one
 
             if (count($attribute) === 0) {
@@ -92,7 +95,7 @@ class EntityTreeBuilder extends AbstractTreeBuilder
             $argument = $attribute[0]->getArguments()[0]; // Groups has only one argument which can be string|array
             $groups = is_string($argument) ? [$argument] : $argument;
 
-            if (array_intersect($serializeGroups, $groups) !== $serializeGroups) {
+            if (count(array_intersect($serializeGroups, $groups)) === 0) {
                 continue;
             }
 

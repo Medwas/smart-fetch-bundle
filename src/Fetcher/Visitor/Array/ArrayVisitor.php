@@ -1,30 +1,32 @@
 <?php
 
-    namespace Verclam\SmartFetchBundle\Fetcher\Visitor\Entity;
+    namespace Verclam\SmartFetchBundle\Fetcher\Visitor\Array;
 
     use Doctrine\ORM\QueryBuilder;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
-    use Verclam\SmartFetchBundle\Attributes\SmartFetchEntity;
+    use Verclam\SmartFetchBundle\Attributes\SmartFetchArray;
     use Verclam\SmartFetchBundle\Enum\FetchModeEnum;
     use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
     use Verclam\SmartFetchBundle\Fetcher\Hydrator\HydratorContainer;
     use Verclam\SmartFetchBundle\Fetcher\PropertyPaths\PropertyPaths;
-    use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityQueryBuilderGenerator;
+    use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\ArrayQueryBuilderGenerator;
     use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\QueryBuilderGeneratorsContainer;
+    use Verclam\SmartFetchBundle\Fetcher\ResultsJoiner\Array\ResultsJoiner;
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
     use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
-    class EntityVisitor implements SmartFetchVisitorInterface
+    class ArrayVisitor implements SmartFetchVisitorInterface
     {
         private PropertyPaths $paths;
 
         /**
-         * @param Configuration                                $configuration
-         * @param EntityQueryBuilderGenerator                  $queryBuilder
+         * @param Configuration $configuration
+         * @param ArrayQueryBuilderGenerator $queryBuilder
          */
         public function __construct(
-            private readonly Configuration               $configuration,
-            private readonly EntityQueryBuilderGenerator $queryBuilder,
+            private readonly Configuration                  $configuration,
+            private readonly ArrayQueryBuilderGenerator     $queryBuilder,
+            private readonly ResultsJoiner                  $resultsJoiner,
         )
         {
             $this->paths = new PropertyPaths();
@@ -37,7 +39,7 @@
 
         public function support(SmartFetch $smartFetch): bool
         {
-            return $smartFetch instanceof SmartFetchEntity;
+            return $smartFetch instanceof SmartFetchArray;
         }
 
         /**
@@ -55,12 +57,24 @@
             //vendor/doctrine/orm/lib/Doctrine/ORM/UnitOfWork.php:2968
             $this->fetch($component, $queryBuilder);
 
-            if($component->getParent() && $component->isComposite()){
+            if($component->getParent() && $this->isRealComposite($component)) {
                 $this->paths->add($component->getParent());
-            }else{
-                $this->paths->removeLast();
+            }
+        }
+
+        private function isRealComposite(Component $component): bool
+        {
+            if(!$component->isComposite()){
+                return false;
             }
 
+            foreach ($component->getChildren() as $child){
+                if(!$child->isScalar()){
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public function addPath(Component $component): void
@@ -88,7 +102,7 @@
 
         public function joinResult(Component $component): void
         {
-            // nothing to do here because entities are object and every is done in the fetch method, so we find
-            // the final result by default in the root component
+            $result = $this->resultsJoiner->joinResult($component);
+            $component->setResult($result);
         }
     }

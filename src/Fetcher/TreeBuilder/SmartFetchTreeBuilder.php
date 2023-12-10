@@ -32,7 +32,6 @@ class SmartFetchTreeBuilder
         $classMetaData = $this->objectManager->getClassMetadata($smartFetch->getClass());
 
         $arrayTree = $this->treeBuilderHandler->handle($smartFetch, $classMetaData);
-        dd($arrayTree);
         $parent = $this->componentFactory->generate($classMetaData, $smartFetch, ComponentFactory::ROOT);
         $parent = Composite::expect($parent);
 
@@ -57,20 +56,45 @@ class SmartFetchTreeBuilder
         $metadata = $component->getClassMetadata();
 
         foreach ($orderedArray as $parent => $children) {
-            if (!$metadata->hasAssociation($parent)) {
+            if (!$metadata->hasField($parent) &&
+            !$metadata->hasAssociation($parent)) {
                 throw new Error('Invalid join entity: ' . $parent . ' with class: ' . $metadata->getName());
+            }
+
+            if(!$metadata->hasAssociation($parent)){
+                $child = $this
+                    ->componentFactory
+                    ->generate(
+                        $metadata,
+                        $smartFetch,
+                        ComponentFactory::LEAF,
+                        [
+                            'type'          => SmartFetchObjectManager::SCALAR,
+                            'alias'         => $parent,
+                            'fieldName'     => $parent,
+                        ]
+                    );
+
+                $component->addChild($child);
+                continue;
             }
 
             $associationMapping = $metadata->getAssociationMapping($parent);
             $classMetaData = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
 
             if (count($children) === 0) {
-                $child = $this->componentFactory->generate($classMetaData, $smartFetch, ComponentFactory::LEAF, $associationMapping);
+                $child = $this
+                    ->componentFactory
+                    ->generate($classMetaData, $smartFetch, ComponentFactory::LEAF, $associationMapping);
+
                 $component->addChild($child);
                 continue;
             }
 
-            $composite = $this->componentFactory->generate($classMetaData, $smartFetch, ComponentFactory::COMPOSITE, $associationMapping);
+            $composite = $this
+                ->componentFactory
+                ->generate($classMetaData, $smartFetch, ComponentFactory::COMPOSITE, $associationMapping);
+
             $composite = Composite::expect($composite);
 
             $component->addChild($composite);

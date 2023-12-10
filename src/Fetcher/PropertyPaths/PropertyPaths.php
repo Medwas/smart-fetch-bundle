@@ -5,7 +5,7 @@
     use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
 
-    class PropertyPaths implements \Iterator
+    class PropertyPaths implements \Iterator, \Countable
     {
 
         private int $position = 0;
@@ -27,6 +27,20 @@
             return $this;
         }
 
+        public function removeFirst(): static
+        {
+            if(count($this->propertyPaths) > 0){
+                unset($this->propertyPaths[0]);
+            }
+            return $this;
+        }
+
+        public function reverse(): PropertyPaths
+        {
+            $this->propertyPaths = array_reverse($this->propertyPaths);
+            return $this;
+        }
+
         public function getAll(): array
         {
             return $this->propertyPaths;
@@ -35,6 +49,11 @@
         public function get(int $index): Component
         {
             return $this->propertyPaths[$index];
+        }
+
+        public function has(int $key): bool
+        {
+            return isset($this->propertyPaths[$key]);
         }
 
         #[\ReturnTypeWillChange]

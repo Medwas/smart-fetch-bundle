@@ -41,7 +41,7 @@ class ComponentFactory
     {
         $leaf = new Leaf();
         $leaf->setClassMetadata($classMetadata);
-        $leaf->setAlias($this->generateCommonAliases($options['fieldName']));
+        $leaf->setAlias($options['alias'] ?? $this->generateCommonAliases($options['fieldName']));
         $leaf->setPropertyName($options['fieldName']);
         $leaf->setPropertyInformations($options);
         return $leaf;
