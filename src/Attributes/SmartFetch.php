@@ -2,8 +2,6 @@
 
 namespace Verclam\SmartFetchBundle\Attributes;
 
-use Verclam\SmartFetchBundle\Enum\FetchModeEnum;
-
 abstract class SmartFetch
 {
     private  string|int $queryValue;
@@ -86,4 +84,6 @@ abstract class SmartFetch
 
         return $object;
     }
+    
+    abstract public function getMappers(): array|string;
 }

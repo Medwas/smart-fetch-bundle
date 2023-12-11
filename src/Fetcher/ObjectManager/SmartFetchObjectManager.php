@@ -15,7 +15,7 @@ class SmartFetchObjectManager
     public const MANY_TO_ONE = 4;
     public const ONE_TO_MANY = 2;
     public const MANY_TO_MANY = 8;
-    public const SCALAR = 'scalar';
+    public const SCALAR = 0;
 
     private ObjectManager $objectManager;
 

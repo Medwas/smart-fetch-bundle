@@ -3,16 +3,30 @@
     namespace Verclam\SmartFetchBundle\Fetcher\Visitor;
 
     use Doctrine\ORM\QueryBuilder;
+    use Verclam\SmartFetchBundle\Attributes\SmartFetch;
     use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
 
     interface SmartFetchVisitorInterface
     {
+        public function support(SmartFetch $smartFetch): bool;
 
-        public function support(Configuration $configuration): bool;
-        public function generate(Component $component);
-        public function start(Component $component): void;
-        public function addPath(Component $component): void;
+        /**
+         * Generate the query builder for the node
+         * And fetch the result
+         */
+        public function fetchResult(Component $component);
 
+        /**
+         * Start visiting the tree beginning from the root node
+         * @param Component $component
+         * @return void
+         */
+        public function visit(Component $component): void;
 
+        /**
+         * Join all the node's result to the root node,
+         * and update the root node's result
+         */
+        public function processResults(Component $component): void;
     }

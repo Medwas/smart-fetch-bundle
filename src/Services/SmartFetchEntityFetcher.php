@@ -9,6 +9,8 @@ use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 use Verclam\SmartFetchBundle\Enum\FetchModeEnum;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\ResultsProcessorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
@@ -65,15 +67,15 @@ class SmartFetchEntityFetcher
         }
 
         //todo add the configuration
-        $this->configuration->configure(['fetchMode' => FetchModeEnum::ENTITY]);
+        $this->configuration->configure(['fetchMode' => FetchModeEnum::ARRAY]);
 
         $tree = $this->treeBuilder->buildTree($smartFetch);
 
         foreach ($this->visitors as $visitor) {
-            if (!$visitor->support($this->configuration)) {
+            if (!$visitor->support($smartFetch)) {
                 continue;
             }
-            $visitor->start($tree);
+            $visitor->visit($tree);
             break;
         }
 

@@ -30,7 +30,6 @@ class Configuration
         $this->defaultOptions['maxManyToOne']   = $this->maxManyToOne;
         $this->defaultOptions['maxOneToOne']    = $this->maxOneToOne;
         $this->defaultOptions['maxScalar']      = $this->maxScalar;
-
     }
 
     public function configure(array $options): void

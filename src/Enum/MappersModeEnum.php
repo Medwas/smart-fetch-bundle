@@ -10,7 +10,7 @@ enum MappersModeEnum
     public function validateMappers(mixed $mappers): void
     {
         if ($this === MappersModeEnum::SERIALIZATION_GROUPS) {
-            if (!is_string($mappers)) {
+            if (!is_array($mappers)) {
                 throw new \Error('SERIALIZATION_GROUPS mode has to be an array');
             }
         }

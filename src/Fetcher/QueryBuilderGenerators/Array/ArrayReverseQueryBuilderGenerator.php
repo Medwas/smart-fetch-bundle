@@ -1,6 +1,6 @@
 <?php
 
-    namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity;
+    namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array;
 
     use Doctrine\ORM\QueryBuilder;
     use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
@@ -9,7 +9,7 @@
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\ComponentFactory;
 
-    class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGeneratorInterface
+    class ArrayReverseQueryBuilderGenerator implements QueryBuilderReverseGeneratorInterface
     {
         public function __construct(
             private readonly ComponentFactory $componentFactory,

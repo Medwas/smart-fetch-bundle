@@ -5,7 +5,6 @@ namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use JetBrains\PhpStorm\ArrayShape;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
-use Verclam\SmartFetchBundle\Attributes\SmartFetchArray;
 use Verclam\SmartFetchBundle\Enum\MappersModeEnum;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 
@@ -19,10 +18,10 @@ abstract class AbstractTreeBuilder implements TreeBuilderInterface
 
     public function handle(SmartFetch $smartFetch, ClassMetadata $classMetadata): array
     {
-        $smartFetchArray = SmartFetchArray::expect($smartFetch);
-        $mappers         = $smartFetchArray->getMappers();
+        $smartFetch      = SmartFetch::expect($smartFetch);
+        $mappers         = $smartFetch->getMappers();
 
-        return match ($smartFetchArray->getMappersMode()) {
+        return match ($smartFetch->getMappersMode()) {
             MappersModeEnum::ENTITY_ASSOCIATIONS    => $this->buildTreeAssociations($mappers, $classMetadata),
             MappersModeEnum::SERIALIZATION_GROUPS   => $this->buildTreeSerializationGroups($mappers, $classMetadata),
             default                                 => throw new \Error('Not implemented')
