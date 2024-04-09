@@ -10,6 +10,18 @@ class Composite extends Component
      * @var Component[]
      */
     private array $children = [];
+    
+    private bool $isCollection = false;
+
+    public function isCollection(): bool
+    {
+        return $this->isCollection;
+    }
+
+    public function setIsCollection(bool $isCollection): void
+    {
+        $this->isCollection = $isCollection;
+    }
 
     public function __construct($root = false)
     {

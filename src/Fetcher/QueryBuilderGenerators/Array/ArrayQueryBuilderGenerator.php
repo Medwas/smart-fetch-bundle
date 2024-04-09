@@ -93,7 +93,7 @@
          */
         private function addSelect(Component $component, QueryBuilder $queryBuilder): QueryBuilder
         {
-            if($component->getParent()->isRoot()){
+            if($component->getParent()->isRoot() && !$component->getParent()->isCollection()){
                 return $queryBuilder;
             }
             

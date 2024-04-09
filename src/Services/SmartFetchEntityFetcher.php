@@ -41,29 +41,31 @@ class SmartFetchEntityFetcher
      */
     public function resolve(Request $request, SmartFetch $smartFetch): iterable
     {
-        $queryName = $smartFetch->getQueryName();
-        $queryValue = $request->attributes->get($queryName);
-        $argumentName = $smartFetch->getArgumentName();
-        $smartFetch->setQueryValue($queryValue);
+        if (!$smartFetch->isCollection()) {
+            $queryName = $smartFetch->getQueryName();
+            $queryValue = $request->attributes->get($queryName);
+            $argumentName = $smartFetch->getArgumentName();
+            $smartFetch->setQueryValue($queryValue);
 
-        if (\is_object($queryValue)) {
-            return [];
-        }
+            if (\is_object($queryValue)) {
+                return [];
+            }
 
-        if ($argumentName && \is_object($request->attributes->get($argumentName))) {
-            return [];
-        }
+            if ($argumentName && \is_object($request->attributes->get($argumentName))) {
+                return [];
+            }
 
-        if (!$smartFetch->getClass()) {
-            return [];
+            if (!$smartFetch->getClass()) {
+                return [];
+            }
+
+            if (empty($queryValue)) {
+                throw new \LogicException(sprintf('Unable to guess how to get a Doctrine instance from the request information for parameter "%s".', $queryName));
+            }
         }
 
         if (!$this->objectManager->initObjectManager($smartFetch)) {
             return [];
-        }
-
-        if (empty($queryValue)) {
-            throw new \LogicException(sprintf('Unable to guess how to get a Doctrine instance from the request information for parameter "%s".', $queryName));
         }
 
         //todo add the configuration

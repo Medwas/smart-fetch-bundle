@@ -10,6 +10,7 @@
     use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\ArrayQueryBuilderGenerator;
     use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor;
     use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
+    use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
     use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
     class ArrayVisitor implements SmartFetchVisitorInterface
@@ -69,8 +70,19 @@
          */
         public function processResults(Component $component): void
         {
-            $result = $this->resultsProcessor->processResult($component);
-            $component->setResult($result);
+            $formattedResult = [];
+
+            if ($component instanceof Composite && $component->isCollection()) {
+                $results = $component->getResult();
+                foreach ($results as $item) {
+                    $r = [$item];
+                    $formattedResult = array_merge($formattedResult, $this->resultsProcessor->processResult($component, $r));
+                }
+            }else {
+                $formattedResult = $this->resultsProcessor->processResult($component);
+            }
+
+            $component->setResult($formattedResult);
         }
 
         /**
@@ -109,10 +121,12 @@
          */
         private function executeQueryBuilder(Component $component, QueryBuilder $queryBuilder): void
         {
-            $result = match ($component->isRoot()){
-                true        => $queryBuilder->getQuery()->getOneOrNullResult(),
-                false       => $queryBuilder->getQuery()->getArrayResult(),
+            $result = match (!$component->isRoot() || ($component instanceof Composite && $component->isCollection())){
+                true       => $queryBuilder->getQuery()->getArrayResult(),
+                false      => $queryBuilder->getQuery()->getOneOrNullResult(),
             };
+
+            //dump([(string)$component => $result]);
 
             // In case when we have a single result and every field is null
             // that means no result, so we do it manually to an empty array

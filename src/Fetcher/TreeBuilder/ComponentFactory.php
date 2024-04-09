@@ -31,7 +31,7 @@ class ComponentFactory
     {
         return match ($type) {
             self::LEAF => $this->generateLeaf($classMetadata, $options),
-            self::COMPOSITE => $this->generateComposite($classMetadata, $options),
+            self::COMPOSITE => $this->generateComposite($classMetadata, $options, $smartFetch),
             self::ROOT => $this->generateRoot($classMetadata, $smartFetch),
             default => throw new Exception('Unknown type')
         };
@@ -47,7 +47,7 @@ class ComponentFactory
         return $leaf;
     }
 
-    public function generateComposite(ClassMetadata $classMetadata, array $options): Composite
+    public function generateComposite(ClassMetadata $classMetadata, array $options, SmartFetch $smartFetch): Composite
     {
         $composite = new Composite();
         $composite->setClassMetadata($classMetadata);
@@ -65,21 +65,26 @@ class ComponentFactory
         $root = new Composite(true);
         $rootAlias = $this->generateRootAlias($smartFetch);
 
+        if (!$smartFetch->isCollection()) {
+            $condition = $this->conditionFactory->generate(
+                [
+                    'type' => ConditionFactory::FILTER_BY,
+                    'property' => $smartFetch->getQueryName(),
+                    'operator' => Condition::EQUAL,
+                    'value' => $smartFetch->getQueryValue()
+                ]
+            );
+            $root->addCondition($condition);
+        }
         //TODO: detect if the queryName is a property if not get the identificator
-        $condition = $this->conditionFactory->generate(
-            [
-                'type' => ConditionFactory::FILTER_BY,
-                'property' => $smartFetch->getQueryName(),
-                'operator' => Condition::EQUAL,
-                'value' => $smartFetch->getQueryValue()
-            ]
-        );
 
+        $root->setIsCollection($smartFetch->isCollection());
         $root->setClassMetadata($classMetadata);
         $root->setAlias($rootAlias);
         $root->setPropertyName($rootAlias);
         $root->setPropertyInformations(['type' => SmartFetchObjectManager::ONE_TO_ONE]);
-        return $root->addCondition($condition);
+        return $root;
+
     }
 
     private function generateRootAlias(SmartFetch $smartFetch): string

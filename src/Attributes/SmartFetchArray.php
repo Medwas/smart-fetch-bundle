@@ -8,9 +8,9 @@ use Verclam\SmartFetchBundle\Enum\MappersModeEnum;
 class SmartFetchArray extends SmartFetch
 {
     public function __construct(
-        string $queryName,
         private MappersModeEnum $mappersMode,
         private string|array $mappers,
+        ?string $queryName = null,
         string $class = null,
         string $argumentName = null,
         bool   $isCollection = false,

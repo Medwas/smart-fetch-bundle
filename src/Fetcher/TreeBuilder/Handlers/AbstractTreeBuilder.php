@@ -20,6 +20,7 @@ abstract class AbstractTreeBuilder implements TreeBuilderInterface
     {
         $smartFetch      = SmartFetch::expect($smartFetch);
         $mappers         = $smartFetch->getMappers();
+        $isCollection    = $smartFetch->isCollection();
 
         return match ($smartFetch->getMappersMode()) {
             MappersModeEnum::ENTITY_ASSOCIATIONS    => $this->buildTreeAssociations($mappers, $classMetadata),

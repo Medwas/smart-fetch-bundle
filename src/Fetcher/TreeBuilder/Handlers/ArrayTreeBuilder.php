@@ -65,10 +65,12 @@ class ArrayTreeBuilder extends AbstractTreeBuilder
     {
         $result = [];
 
-        $fieldNames = [
-            ...$classMetadata->getFieldNames(),
-            ...$classMetadata->getAssociationNames()
-        ];
+        [
+            'associations'  => $associations,
+            'scalars'       => $scalars
+        ] = $this->getClassMetadataInfo($classMetadata);
+
+        $fieldNames = [...$scalars, ...$associations];
 
         foreach ($fieldNames as $fieldName) {
             if (in_array($fieldName, $visited, true)) {

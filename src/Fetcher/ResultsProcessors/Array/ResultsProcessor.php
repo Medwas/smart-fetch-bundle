@@ -7,10 +7,11 @@ use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\ResultsProcessorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
 
 class ResultsProcessor implements ResultsProcessorInterface
 {
-    private ?HistoryPaths $history = null;
+    private HistoryPaths $history;
 
     public function __construct()
     {
@@ -22,7 +23,7 @@ class ResultsProcessor implements ResultsProcessorInterface
      */
     public function processResult(Component $component, array &$result = []): array
     {
-        if($component->isRoot()){
+        if($component->isRoot() && $result === []){
             $result = $component->getResult();
         }
 
@@ -52,7 +53,8 @@ class ResultsProcessor implements ResultsProcessorInterface
      */
     private function join(Component $component, HistoryPaths $paths, array &$result = []): void
     {
-        match ($component->getParent()->isRoot()){
+        $parent = $component->getParent();
+        match ($parent->isRoot() && !$parent->isCollection()){
             true     => $this->joinRootResult($component, $result),
             false    => $this->prepareAndJoinChildResult($component, $paths, $result),
         };
@@ -100,20 +102,28 @@ class ResultsProcessor implements ResultsProcessorInterface
         }
 
         foreach ($clonedHistory as $currentHistory){
-            if($currentHistory->getParent()->isRoot()){
+            $historyPropertyName = $currentHistory->getPropertyName();
+
+            if($currentHistory->getParent()->isRoot() && array_key_exists($historyPropertyName, $parentResults)){
+                $res = $parentResults[$historyPropertyName];
                 $this->prepareAndJoinChildResult(
                     $childNode,
                     $clonedHistory->removeLast(),
-                    $parentResults[$currentHistory->getPropertyName()]
+                    $res,
                 );
                 break;
             }
 
-            foreach ($parentResults as $parentKey => $parentResult) {
+            foreach ($parentResults as &$parentResult) {
+
+                if(!array_key_exists($historyPropertyName, $parentResult)) {
+                    continue;
+                }
+
                 $this->prepareAndJoinChildResult(
                     $childNode,
                     $clonedHistory->removeLast(),
-                    $parentResults[$parentKey][$currentHistory->getPropertyName()]
+                    $parentResult[$historyPropertyName]
                 );
             }
         }
@@ -155,14 +165,17 @@ class ResultsProcessor implements ResultsProcessorInterface
             //if it mant_to_x means array of arrays, else means one array
             if($intersectParentsKey !== false){
                 //we don't need the parent identifier in the child result anymore
-                unset($childResults[$childKey][$identifierAlias]);
 
-                if($childNode->hasType(SmartFetchObjectManager::MANY_TO_ONE) ||
-                    $childNode->hasType(SmartFetchObjectManager::MANY_TO_MANY)
-                ){
-                    $parentResults[$intersectParentsKey][$childFieldName][] = $childResults[$childKey];
+                unset($childResult[$identifierAlias]);
+
+                if($childNode->hasType(SmartFetchObjectManager::MANY_TO_ONE) || $childNode->hasType(SmartFetchObjectManager::MANY_TO_MANY)){
+                    if (empty(array_filter($childResult))) {
+                        $parentResults[$intersectParentsKey][$childFieldName] = [];
+                    } else {
+                        $parentResults[$intersectParentsKey][$childFieldName][] = $childResult;
+                    }
                 }else{
-                    $parentResults[$intersectParentsKey][$childFieldName] = $childResults[$childKey];
+                    $parentResults[$intersectParentsKey][$childFieldName] =  empty(array_filter($childResult)) ? [] : $childResult;
                 }
 
                 //unset the child result from the child result array, because we don't need it anymore
