@@ -70,19 +70,22 @@ class ArrayVisitor implements SmartFetchVisitorInterface
      */
     public function processResults(Component $component): void
     {
-        $formattedResult = [];
+        $processedResult = [];
 
         if ($component instanceof Composite && $component->isCollection()) {
-            $results = $component->getResult();
-            foreach ($results as $item) {
-                $r = [$item];
-                $formattedResult = array_merge($formattedResult, $this->resultsProcessor->processResult($component, $r));
+            $entities = $component->getResult();
+            foreach ($entities as $singleEntity) {
+                $arraySingleEntity = [$singleEntity];
+                $processedResult = array_merge(
+                    $processedResult,
+                    $this->resultsProcessor->processResult($component, $arraySingleEntity)
+                );
             }
         }else {
-            $formattedResult = $this->resultsProcessor->processResult($component);
+            $processedResult = $this->resultsProcessor->processResult($component);
         }
 
-        $component->setResult($formattedResult);
+        $component->setResult($processedResult);
     }
 
     /**

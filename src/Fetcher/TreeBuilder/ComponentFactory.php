@@ -101,7 +101,7 @@ class ComponentFactory
     private function generateCommonAliases(string $propertyName): string
     {
         //TODO: remove this line, and let it only for debug purpose;
-        return $propertyName . '_a' . rand(0, 1000);
-        return $propertyName[0] . $propertyName[-1] . '_a' . rand(0, 1000);
+//        return $propertyName . '_a' . rand(0, 1000);
+        return $propertyName[0] . $propertyName[-1] . '_a' . rand(0, PHP_INT_MAX);
     }
 }

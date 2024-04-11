@@ -4,13 +4,13 @@ namespace Verclam\SmartFetchBundle\Attributes;
 
 abstract class SmartFetch
 {
-    private  string|int $queryValue;
+    private string|int|null $queryValue;
 
     public function __construct(
-        private string          $queryName,
+        private ?string         $queryName,
         private ?string         $class = null,
         private ?string         $argumentName = null,
-        private bool            $isCollection = false,
+        private bool            $collection = false,
         private ?string         $entityManager = null
     )
     {
@@ -46,34 +46,34 @@ abstract class SmartFetch
         $this->entityManager = $entityManager;
     }
 
-    public function getQueryName(): string
+    public function getQueryName(): ?string
     {
         return $this->queryName;
     }
 
-    public function setQueryName(string $queryName): void
+    public function setQueryName(?string $queryName): void
     {
         $this->queryName = $queryName;
     }
 
-    public function getQueryValue(): int|string
+    public function getQueryValue(): int|string|null
     {
         return $this->queryValue;
     }
 
-    public function setQueryValue(int|string $queryValue): void
+    public function setQueryValue(int|string|null $queryValue): void
     {
         $this->queryValue = $queryValue;
     }
 
     public function isCollection(): bool
     {
-        return $this->isCollection;
+        return $this->collection;
     }
 
-    public function setIsCollection(bool $isCollection): void
+    public function setIsCollection(bool $collection): void
     {
-        $this->isCollection = $isCollection;
+        $this->collection = $collection;
     }
 
     public static function expect($object): static
