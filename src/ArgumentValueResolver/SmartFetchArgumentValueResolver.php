@@ -9,6 +9,10 @@ use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 use Verclam\SmartFetchBundle\Services\ArgumentResolver;
 
+/**
+ * Before Symfony 6.2, this ArgumentValueResolver will be called in order to resolve the
+ * argument (parameters) in the controller
+ */
 class SmartFetchArgumentValueResolver implements ArgumentValueResolverInterface
 {
 

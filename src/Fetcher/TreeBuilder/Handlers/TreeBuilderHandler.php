@@ -6,8 +6,19 @@ use Doctrine\Persistence\Mapping\ClassMetadata;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
 
+/**
+ * Construct an array of the relation using the ClassMetadata
+ * and the mappers "Serialization groups" or "Entity associations"
+ * using one the services dedicated for each SmartFetch objectif:
+ * -1- Fetch as an array.
+ * -2- Fetch as Entity
+ * -3- Fetch as a DTO
+ */
 class TreeBuilderHandler
 {
+    /**
+     * @param iterable<int, TreeBuilderInterface> $handlers
+     */
     public function __construct(
         private readonly iterable $handlers = [],
     )

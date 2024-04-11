@@ -9,6 +9,12 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchEntity;
 
+/**
+ * Construct the array relation tree in case where we need
+ * an Entity as result, for this case we do not need to have
+ * information about the scalar property "string, int ...etc"
+ * because they will be fetched by default.
+ */
 class EntityTreeBuilder extends AbstractTreeBuilder
 {
     function support(SmartFetch $smartFetch): bool

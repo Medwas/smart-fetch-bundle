@@ -8,9 +8,14 @@ use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\ResultsProcessorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
 
+/**
+ * In the case of the Array mode every need fetched has
+ * its own result, this class will join all the results of the
+ * all the nodes to the root node.
+ */
 class ResultsProcessor implements ResultsProcessorInterface
 {
-    private ?HistoryPaths $history = null;
+    private HistoryPaths $history;
 
     public function __construct()
     {
@@ -22,7 +27,7 @@ class ResultsProcessor implements ResultsProcessorInterface
      */
     public function processResult(Component $component, array &$result = []): array
     {
-        if($component->isRoot()){
+        if($component->isRoot() && $result === []){
             $result = $component->getResult();
         }
 
@@ -52,7 +57,8 @@ class ResultsProcessor implements ResultsProcessorInterface
      */
     private function join(Component $component, HistoryPaths $paths, array &$result = []): void
     {
-        match ($component->getParent()->isRoot()){
+        $parent = $component->getParent();
+        match ($parent->isRoot() && !$parent->isCollection()){
             true     => $this->joinRootResult($component, $result),
             false    => $this->prepareAndJoinChildResult($component, $paths, $result),
         };
@@ -100,20 +106,26 @@ class ResultsProcessor implements ResultsProcessorInterface
         }
 
         foreach ($clonedHistory as $currentHistory){
-            if($currentHistory->getParent()->isRoot()){
+            $historyPropertyName = $currentHistory->getPropertyName();
+
+            if($currentHistory->getParent()->isRoot() && array_key_exists($historyPropertyName, $parentResults) ){
                 $this->prepareAndJoinChildResult(
                     $childNode,
                     $clonedHistory->removeLast(),
-                    $parentResults[$currentHistory->getPropertyName()]
+                    $parentResults[$historyPropertyName]
                 );
                 break;
             }
 
-            foreach ($parentResults as $parentKey => $parentResult) {
+            foreach ($parentResults as &$parentResult) {
+                if(!array_key_exists($historyPropertyName, $parentResult)) {
+                    continue;
+                }
+
                 $this->prepareAndJoinChildResult(
                     $childNode,
                     $clonedHistory->removeLast(),
-                    $parentResults[$parentKey][$currentHistory->getPropertyName()]
+                    $parentResult[$historyPropertyName]
                 );
             }
         }
@@ -157,6 +169,13 @@ class ResultsProcessor implements ResultsProcessorInterface
                 //we don't need the parent identifier in the child result anymore
                 unset($childResults[$childKey][$identifierAlias]);
 
+                //check if the current result has only null values, in this case we need to remove it
+                if($this->isEmpty($childResults[$childKey])){
+                    unset($childResults[$childKey]);
+                    $parentResults[$intersectParentsKey][$childFieldName] = [];
+                    continue;
+                }
+
                 if($childNode->hasType(SmartFetchObjectManager::MANY_TO_ONE) ||
                     $childNode->hasType(SmartFetchObjectManager::MANY_TO_MANY)
                 ){
@@ -176,5 +195,20 @@ class ResultsProcessor implements ResultsProcessorInterface
         //update the result on the node, because we will use it later in another loop
         //so that will increase the performance like that
         $childNode->setResult($childResults);
+    }
+
+    /**
+     * Check if an array has only null values
+     * @param array $childResult
+     * @return bool
+     */
+    private function isEmpty(array $childResult): bool
+    {
+        $childResultLength = count($childResult);
+        $nullValuesCount = count(
+            array_keys($childResult, null)
+        );
+
+        return $childResultLength === $nullValuesCount;
     }
 }
