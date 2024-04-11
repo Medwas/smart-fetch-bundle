@@ -3,14 +3,12 @@
 namespace Verclam\SmartFetchBundle\Services;
 
 use Exception;
+use LogicException;
 use Symfony\Component\HttpFoundation\Request;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
-use Verclam\SmartFetchBundle\Enum\FetchModeEnum;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor;
-use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\ResultsProcessorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
@@ -41,33 +39,42 @@ class SmartFetchEntityFetcher
      */
     public function resolve(Request $request, SmartFetch $smartFetch): iterable
     {
-        $queryName = $smartFetch->getQueryName();
-        $queryValue = $request->attributes->get($queryName);
-        $argumentName = $smartFetch->getArgumentName();
-        $smartFetch->setQueryValue($queryValue);
+        //TODO: Try to automatically connect the parameter name with the URL parameter
+        //TODO: Try to automatically deduct the classname
+        if (!$smartFetch->isCollection()) {
+            $queryName = $smartFetch->getQueryName();
+            $queryValue = $request->attributes->get($queryName);
+            $argumentName = $smartFetch->getArgumentName();
+            $smartFetch->setQueryValue($queryValue);
 
-        if (\is_object($queryValue)) {
-            return [];
-        }
+            if (\is_object($queryValue)) {
+                return [];
+            }
 
-        if ($argumentName && \is_object($request->attributes->get($argumentName))) {
-            return [];
-        }
+            if ($argumentName && \is_object($request->attributes->get($argumentName))) {
+                return [];
+            }
 
-        if (!$smartFetch->getClass()) {
-            return [];
+            if (!$smartFetch->getClass()) {
+                return [];
+            }
+
+            if (empty($queryValue)) {
+                throw new LogicException(
+                    sprintf(
+                        'Unable to guess how to get a Doctrine instance from the request information for parameter "%s".',
+                        $queryName
+                    )
+                );
+            }
         }
 
         if (!$this->objectManager->initObjectManager($smartFetch)) {
             return [];
         }
 
-        if (empty($queryValue)) {
-            throw new \LogicException(sprintf('Unable to guess how to get a Doctrine instance from the request information for parameter "%s".', $queryName));
-        }
-
-        //todo add the configuration
-        $this->configuration->configure(['fetchMode' => FetchModeEnum::ARRAY]);
+        //TODO: add the configuration
+        $this->configuration->configure([]);
 
         $tree = $this->treeBuilder->buildTree($smartFetch);
 

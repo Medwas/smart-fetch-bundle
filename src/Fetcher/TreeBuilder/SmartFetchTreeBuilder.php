@@ -12,7 +12,11 @@ use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\TreeBuilderHandler;
 
 /**
  * Class SmartFetchTreeBuilder
- * Tree Builder for the smart fetch
+ * Tree Builder for the smart fetch,
+ * It consists of reading the ClassMetadata of the entity
+ * build the tree of the relations as an array and then use this
+ * array to build a tree of Component that represent the relation
+ * with all the information needed in every node that we need to fetch.
  */
 class SmartFetchTreeBuilder
 {
@@ -45,13 +49,12 @@ class SmartFetchTreeBuilder
             throw new Error('First parent must be a root');
         }
 
-        $this->buildEntityComponentTree($arrayTree, $parent, $smartFetch);
-
-        return $parent;
+        return $this->buildEntityComponentTree($arrayTree, $parent, $smartFetch);
     }
 
     /**
-     * Build the complete tree of the fields needed for the smart fetch
+     * Build the complete Component Nodes tree
+     * of the fields needed for the smart fetch
      * Using the arrayTree
      * @throws Exception
      */
@@ -59,7 +62,7 @@ class SmartFetchTreeBuilder
         array      $orderedArray,
         Composite  $component,
         SmartFetch $smartFetch
-    ): void
+    ): Composite
     {
         $metadata = $component->getClassMetadata();
 
@@ -108,5 +111,7 @@ class SmartFetchTreeBuilder
             $component->addChild($composite);
             $this->buildEntityComponentTree($children, $composite, $smartFetch);
         }
+
+        return $component;
     }
 }

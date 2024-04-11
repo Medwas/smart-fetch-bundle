@@ -8,6 +8,12 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchArray;
 
+/**
+ * Construct the array relation tree in case where we need
+ * an array as result, for this case we need to have
+ * information about the scalar property "string, int ...etc"
+ * because they will not be fetched by default.
+ */
 class ArrayTreeBuilder extends AbstractTreeBuilder
 {
     function support(SmartFetch $smartFetch): bool
@@ -65,10 +71,12 @@ class ArrayTreeBuilder extends AbstractTreeBuilder
     {
         $result = [];
 
-        $fieldNames = [
-            ...$classMetadata->getFieldNames(),
-            ...$classMetadata->getAssociationNames()
-        ];
+        [
+            'associations'  => $associations,
+            'scalars'       => $scalars
+        ] = $this->getClassMetadataInfo($classMetadata);
+
+        $fieldNames = [...$scalars, ...$associations];
 
         foreach ($fieldNames as $fieldName) {
             if (in_array($fieldName, $visited, true)) {

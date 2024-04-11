@@ -10,10 +10,15 @@ class SmartFetchDTO extends SmartFetch
         string $queryName,
         string $class = null,
         string $argumentName = null,
-        bool   $isCollection = false,
+        bool   $collection = false,
         string $entityManager = null
     )
     {
-        parent::__construct($queryName, $class, $argumentName, $isCollection, $entityManager);
+        parent::__construct($queryName, $class, $argumentName, $collection, $entityManager);
+    }
+
+    public function getMappers(): array|string
+    {
+        return [];
     }
 }

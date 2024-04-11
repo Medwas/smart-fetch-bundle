@@ -27,7 +27,12 @@ class ComponentFactory
     /**
      * @throws Exception
      */
-    public function generate(ClassMetadata $classMetadata, SmartFetch $smartFetch, string $type, array $options = []): Component
+    public function generate(
+        ClassMetadata $classMetadata,
+        SmartFetch $smartFetch,
+        string $type,
+        array $options = []
+    ): Component
     {
         return match ($type) {
             self::LEAF => $this->generateLeaf($classMetadata, $options),
@@ -65,21 +70,25 @@ class ComponentFactory
         $root = new Composite(true);
         $rootAlias = $this->generateRootAlias($smartFetch);
 
-        //TODO: detect if the queryName is a property if not get the identificator
-        $condition = $this->conditionFactory->generate(
-            [
-                'type' => ConditionFactory::FILTER_BY,
-                'property' => $smartFetch->getQueryName(),
-                'operator' => Condition::EQUAL,
-                'value' => $smartFetch->getQueryValue()
-            ]
-        );
+        if (!$smartFetch->isCollection()) {
+            $condition = $this->conditionFactory->generate(
+                [
+                    'type' => ConditionFactory::FILTER_BY,
+                    'property' => $smartFetch->getQueryName(),
+                    'operator' => Condition::EQUAL,
+                    'value' => $smartFetch->getQueryValue()
+                ]
+            );
+            $root->addCondition($condition);
+        }
 
+        $root->setIsCollection($smartFetch->isCollection());
         $root->setClassMetadata($classMetadata);
         $root->setAlias($rootAlias);
         $root->setPropertyName($rootAlias);
         $root->setPropertyInformations(['type' => SmartFetchObjectManager::ONE_TO_ONE]);
-        return $root->addCondition($condition);
+
+        return $root;
     }
 
     private function generateRootAlias(SmartFetch $smartFetch): string
@@ -92,7 +101,7 @@ class ComponentFactory
     private function generateCommonAliases(string $propertyName): string
     {
         //TODO: remove this line, and let it only for debug purpose;
-        return $propertyName . '_a' . rand(0, 1000);
-        return $propertyName[0] . $propertyName[-1] . '_a' . rand(0, 1000);
+//        return $propertyName . '_a' . rand(0, 1000);
+        return $propertyName[0] . $propertyName[-1] . '_a' . rand(0, PHP_INT_MAX);
     }
 }

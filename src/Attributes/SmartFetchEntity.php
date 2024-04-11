@@ -7,18 +7,23 @@ use Verclam\SmartFetchBundle\Enum\MappersModeEnum;
 #[\Attribute(\Attribute::TARGET_PARAMETER | \Attribute::TARGET_METHOD | \Attribute::IS_REPEATABLE)]
 class SmartFetchEntity extends SmartFetch
 {
+    private array $mappers;
     public function __construct(
         string $queryName,
         private MappersModeEnum $mappersMode,
-        private string|array $mappers,
+        string|array $mappers,
         string $class = null,
         string $argumentName = null,
-        bool   $isCollection = false,
+        bool   $collection = false,
         string $entityManager = null
     )
     {
-        $this->mappersMode->validateMappers($this->mappers);
-        parent::__construct($queryName, $class, $argumentName, $isCollection, $entityManager);
+        if(!is_array($mappers)){
+            $mappers = [$mappers];
+        }
+        $this->mappers = $mappers;
+
+        parent::__construct($queryName, $class, $argumentName, $collection, $entityManager);
     }
 
     public function getMappersMode(): MappersModeEnum
