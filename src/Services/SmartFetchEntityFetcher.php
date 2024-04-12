@@ -4,6 +4,7 @@ namespace Verclam\SmartFetchBundle\Services;
 
 use Exception;
 use LogicException;
+use ReflectionParameter;
 use Symfony\Component\HttpFoundation\Request;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
@@ -19,12 +20,14 @@ class SmartFetchEntityFetcher
      * @param Configuration $configuration
      * @param SmartFetchObjectManager $objectManager
      * @param SmartFetchTreeBuilder $treeBuilder
+     * @param ArgumentNameResolver $argumentNameResolver
      * @param iterable<int, SmartFetchVisitorInterface> $visitors
      */
     public function __construct(
         private readonly Configuration           $configuration,
         private readonly SmartFetchObjectManager $objectManager,
         private readonly SmartFetchTreeBuilder   $treeBuilder,
+        private readonly ArgumentNameResolver    $argumentNameResolver,
         private readonly iterable                $visitors,
     )
     {
@@ -33,14 +36,15 @@ class SmartFetchEntityFetcher
     /**
      * @param Request $request
      * @param SmartFetch $smartFetch
-     *
+     * @param array<ReflectionParameter>|null $reflexionParams
      * @return iterable
      * @throws Exception
      */
-    public function resolve(Request $request, SmartFetch $smartFetch): iterable
+    public function resolve(Request $request, SmartFetch $smartFetch, array $reflexionParams = null): iterable
     {
         //TODO: Try to automatically connect the parameter name with the URL parameter
         //TODO: Try to automatically deduct the classname
+        $this->argumentNameResolver->resolve($smartFetch, $request, $reflexionParams);
         if (!$smartFetch->isCollection()) {
             $queryName = $smartFetch->getQueryName();
             $queryValue = $request->attributes->get($queryName);

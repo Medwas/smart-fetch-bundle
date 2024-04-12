@@ -29,7 +29,7 @@ class SmartFetchEventListener
             $controller = [$controller, '__invoke'];
         }
 
-        if (!\is_array($controller)) {
+        if (!\is_callable($controller)) {
             return;
         }
 
@@ -45,11 +45,13 @@ class SmartFetchEventListener
             $method->getAttributes(SmartFetch::class, \ReflectionAttribute::IS_INSTANCEOF)
         );
 
+        $reflexionParams = $method->getParameters();
+
         foreach ($methodAttributes as $attribute) {
             if (!$attribute->getClass()) {
                 throw new \Error('When SmartFetch attribute used on a methode it must have a class name parameter.');
             }
-            foreach ($this->entityFetcher->resolve($request, $attribute) as $entity) {
+            foreach ($this->entityFetcher->resolve($request, $attribute, $reflexionParams) as $entity) {
                 $argumentName = $attribute->getArgumentName() ?? $attribute->getQueryName();
                 $request->attributes->set($argumentName, $entity);
             }

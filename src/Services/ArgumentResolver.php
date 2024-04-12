@@ -3,10 +3,10 @@
     namespace Verclam\SmartFetchBundle\Services;
 
     use Exception;
+    use LogicException;
     use Verclam\SmartFetchBundle\Attributes\SmartFetch;
     use Symfony\Component\HttpFoundation\Request;
     use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
-    use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 
     /**
      * Confirm that the attribute coming from the parameter
@@ -25,23 +25,31 @@
          */
         public function resolve(Request $request, ArgumentMetadata $argument): iterable
         {
-            $options = $argument->getAttributes(SmartFetchInterface::class, ArgumentMetadata::IS_INSTANCEOF);
-            $options = $options[0] ?? null;
+            $attribute = $argument->getAttributes(SmartFetch::class, ArgumentMetadata::IS_INSTANCEOF);
+            $attribute = $attribute[0] ?? null;
 
-            if (!($options instanceof SmartFetchInterface)) {
+            if (!($attribute instanceof SmartFetch)) {
                 return [];
             }
 
-            $className = $options->getClass() ?? $argument->getType();
+            $className = $attribute->getClass() ?? $argument->getType();
 
             if (!$className) {
                 return [];
             }
 
-            $options->setClass($className);
-            $options->setArgumentName($argument->getName());
+            if(!class_exists($className)){
+                throw new LogicException(
+                    sprintf(
+                        'The provided class "%s" does\'t exits', $className
+                    )
+                );
+            }
 
-            return $this->entityFetcher->resolve($request, $options);
+            $attribute->setClass($className);
+            $attribute->setArgumentName($argument->getName());
+
+            return $this->entityFetcher->resolve($request, $attribute);
         }
 
     }

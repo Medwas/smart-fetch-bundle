@@ -86,4 +86,6 @@ abstract class SmartFetch
     }
     
     abstract public function getMappers(): array|string;
+    abstract public function getType(): string;
+
 }

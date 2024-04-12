@@ -26,6 +26,11 @@ class ArrayVisitor implements SmartFetchVisitorInterface
         private readonly ResultsProcessor               $resultsProcessor,
     )
     {
+        $this->initHistory();
+    }
+
+    private function initHistory(): void
+    {
         $this->history = new HistoryPaths();
     }
 
@@ -86,6 +91,9 @@ class ArrayVisitor implements SmartFetchVisitorInterface
         }
 
         $component->setResult($processedResult);
+
+        // reset the history in case we will use this visitor in other places.
+        $this->initHistory();
     }
 
     /**
@@ -127,14 +135,14 @@ class ArrayVisitor implements SmartFetchVisitorInterface
     {
         $result = match (!$component->isRoot() || ($component instanceof Composite && $component->isCollection())){
             true       => $queryBuilder->getQuery()->getArrayResult(),
-            false      => $queryBuilder->getQuery()->getOneOrNullResult(),
+            false      => $queryBuilder->getQuery()->getSingleResult(),
         };
 
         // In case when we have a single result and every field is null
         // that means no result, so we do it manually to an empty array
         // we will need to investigate to understand why in some cases
         // no result give an array with null values.
-        if(count($result) === 1){
+            if(count($result) === 1){
             $allFieldsAreNull = true;
             foreach ($result[0] as $property){
                 if(!is_null($property)){

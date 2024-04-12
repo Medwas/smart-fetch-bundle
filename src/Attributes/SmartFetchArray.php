@@ -44,4 +44,9 @@ class SmartFetchArray extends SmartFetch
     {
         $this->mappers = $mappers;
     }
+
+    public function getType(): string
+    {
+        return 'array';
+    }
 }

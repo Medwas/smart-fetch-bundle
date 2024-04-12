@@ -74,7 +74,7 @@ class ComponentFactory
             $condition = $this->conditionFactory->generate(
                 [
                     'type' => ConditionFactory::FILTER_BY,
-                    'property' => $smartFetch->getQueryName(),
+                    'property' => $classMetadata->getIdentifier()[0],
                     'operator' => Condition::EQUAL,
                     'value' => $smartFetch->getQueryValue()
                 ]
