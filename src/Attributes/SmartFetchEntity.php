@@ -9,9 +9,9 @@ class SmartFetchEntity extends SmartFetch
 {
     private array $mappers;
     public function __construct(
-        string $queryName,
         private MappersModeEnum $mappersMode,
         string|array $mappers,
+        string $queryName = null,
         string $class = null,
         string $argumentName = null,
         bool   $collection = false,
@@ -44,5 +44,10 @@ class SmartFetchEntity extends SmartFetch
     public function setMappers(array|string $mappers): void
     {
         $this->mappers = $mappers;
+    }
+
+    public function getType(): string
+    {
+        return $this->getClass();
     }
 }

@@ -26,6 +26,11 @@ class EntityVisitor implements SmartFetchVisitorInterface
         private readonly EntityQueryBuilderGenerator $queryBuilder,
     )
     {
+        $this->initHistory();
+    }
+
+    private function initHistory(): void
+    {
         $this->paths = new HistoryPaths();
     }
 
@@ -84,5 +89,8 @@ class EntityVisitor implements SmartFetchVisitorInterface
     {
         // nothing to do here because entities are object and every is done in the fetch method, so we find
         // the final result by default in the root component
+
+        // reset the history in case we will use this visitor in other places.
+        $this->initHistory();
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Verclam\SmartFetchBundle\ArgumentResolver;
 
+use Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
@@ -20,6 +21,9 @@ class SmartFetchArgumentResolver implements ValueResolverInterface
     {
     }
 
+    /**
+     * @throws Exception
+     */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
         return $this->resolver->resolve($request, $argument);

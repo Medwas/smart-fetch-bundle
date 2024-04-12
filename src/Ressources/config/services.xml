@@ -6,6 +6,8 @@
             <argument type="service" id="verclam.smart-fetcher-entity-fetcher"/>
         </service>
 
+        <service id="verclam.smart-fetch.argument-name-resolver" class="Verclam\SmartFetchBundle\Services\ArgumentNameResolver" autowire="true" public="false" />
+
         <service id="verclam.smart-fetch.object-manager" class="Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager" autowire="true" public="false" />
 
         <service id="verclam.smart-fetch.configuration" class="Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration" autowire="true" public="false" />
@@ -66,10 +68,12 @@
         <service id="verclam.smart-fetcher.value-resolver" class="Verclam\SmartFetchBundle\Services\ArgumentResolver" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetcher-entity-fetcher"/>
         </service>
+
         <service id="verclam.smart-fetcher-entity-fetcher" class="Verclam\SmartFetchBundle\Services\SmartFetchEntityFetcher" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetch.configuration"/>
             <argument type="service" id="verclam.smart-fetch.object-manager"/>
             <argument type="service" id="verclam.smart-fetch.component-tree-builder"/>
+            <argument type="service" id="verclam.smart-fetch.argument-name-resolver"/>
             <argument type="iterator">
                 <argument type="service" id="verclam.smart-fetch.entity-visitor"/>
                 <argument type="service" id="verclam.smart-fetch.array-visitor"/>
