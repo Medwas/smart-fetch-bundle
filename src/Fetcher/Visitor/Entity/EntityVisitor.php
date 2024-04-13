@@ -7,9 +7,9 @@ use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchEntity;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
-use Verclam\SmartFetchBundle\Fetcher\Hydrator\HydratorContainer;
+use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityFetchEagerQueryBuilderGenerator;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityQueryBuilderGenerator;
-use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\QueryBuilderGeneratorsContainer;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Entity\ResultsProcessor;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
@@ -19,19 +19,26 @@ class EntityVisitor implements SmartFetchVisitorInterface
 
     /**
      * @param Configuration                                $configuration
-     * @param EntityQueryBuilderGenerator                  $queryBuilder
+     * @param EntityQueryBuilderGenerator                  $queryBuilderGenerator
      */
     public function __construct(
-        private readonly Configuration               $configuration,
-        private readonly EntityQueryBuilderGenerator $queryBuilder,
-    )
-    {
+        private readonly Configuration                          $configuration,
+        private readonly EntityQueryBuilderGenerator            $queryBuilderGenerator,
+        private readonly EntityFetchEagerQueryBuilderGenerator  $fetchEagerQueryBuilderGenerator,
+        private readonly ResultsProcessor                       $resultsProcessor,
+    ) {
         $this->initHistory();
     }
 
     private function initHistory(): void
     {
         $this->paths = new HistoryPaths();
+    }
+
+
+    public function removeLastHistory(): void
+    {
+        $this->paths?->removeLast();
     }
 
     public function visit(Component $component): void
@@ -52,6 +59,11 @@ class EntityVisitor implements SmartFetchVisitorInterface
         //TODO: ADD MANAGEMENT OF THE MAX CONFIGURATION
         $queryBuilder = $this->generateQuery($component);
 
+//        if ($component->getFetchEagerChildren()) {
+//            $fetchEagerQueryBuilder = $this->fetchEagerQueryBuilderGenerator
+//                ->generate($component, $this->paths);
+//        }
+
         //TODO: Must manage one_to_one inverse side which automatically eager fetched
         //https://github.com/doctrine/orm/issues/4389
         //https://github.com/doctrine/orm/issues/3778
@@ -59,7 +71,7 @@ class EntityVisitor implements SmartFetchVisitorInterface
         //vendor/doctrine/orm/lib/Doctrine/ORM/UnitOfWork.php:2968
         $this->fetch($component, $queryBuilder);
 
-        if($component->getParent() && $component->isComposite()){
+        if ($component->getParent() && $component->isComposite()) {
             $this->paths->add($component->getParent());
             return;
         }
@@ -69,7 +81,7 @@ class EntityVisitor implements SmartFetchVisitorInterface
 
     private function generateQuery(Component $component): QueryBuilder
     {
-        return $this->queryBuilder->generate($component , $this->paths);
+        return $this->queryBuilderGenerator->generate($component, $this->paths);
     }
 
     /**
@@ -77,7 +89,7 @@ class EntityVisitor implements SmartFetchVisitorInterface
      */
     private function fetch(Component $component, QueryBuilder $queryBuilder): void
     {
-        $result = match ($component->isRoot()){
+        $result = match ($component->isRoot()) {
             true        => $queryBuilder->getQuery()->getOneOrNullResult(),
             false       => $queryBuilder->getQuery()->getResult(),
         };

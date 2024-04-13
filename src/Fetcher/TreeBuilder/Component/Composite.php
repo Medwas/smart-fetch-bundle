@@ -56,6 +56,8 @@ class Composite extends Component
         if($this->isRoot()){
             $visitor->processResults($this);
         }
+
+        $visitor->removeLastHistory();
     }
 
     public function isCollection(): bool

@@ -8,6 +8,7 @@ use Exception;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Leaf;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\TreeBuilderHandler;
 
 /**
@@ -29,8 +30,7 @@ class SmartFetchTreeBuilder
         private readonly SmartFetchObjectManager $objectManager,
         private readonly ComponentFactory        $componentFactory,
         private readonly TreeBuilderHandler      $treeBuilderHandler,
-    )
-    {
+    ) {
     }
 
     /**
@@ -62,18 +62,16 @@ class SmartFetchTreeBuilder
         array      $orderedArray,
         Composite  $component,
         SmartFetch $smartFetch
-    ): Composite
-    {
+    ): Composite {
         $metadata = $component->getClassMetadata();
 
         foreach ($orderedArray as $parent => $children) {
-            if (!$metadata->hasField($parent) &&
-            !$metadata->hasAssociation($parent)) {
+            if (!$metadata->hasField($parent) && !$metadata->hasAssociation($parent)) {
                 throw new Error('Invalid join entity: ' . $parent . ' with class: ' . $metadata->getName());
             }
 
-            if(!$metadata->hasAssociation($parent)){
-                $child = $this
+            if (!$metadata->hasAssociation($parent)) {
+                $leaf = $this
                     ->componentFactory
                     ->generate(
                         $metadata,
@@ -86,19 +84,53 @@ class SmartFetchTreeBuilder
                         ]
                     );
 
-                $component->addChild($child);
+                $component->addChild($leaf);
                 continue;
             }
 
             $associationMapping = $metadata->getAssociationMapping($parent);
             $classMetaData = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
 
+            $fetchEagerChildren = [];
+            
+            foreach ($classMetaData->getAssociationMappings() as $insideAssociationMapping) {
+                $insideClassMetadata = $this->objectManager
+                    ->getClassMetadata($insideAssociationMapping['targetEntity']);
+
+                if (($insideAssociationMapping['type'] === SmartFetchObjectManager::ONE_TO_ONE)
+                    && !$insideAssociationMapping['isOwningSide']) {
+                    $fetchEagerChildren[] = $this->componentFactory
+                        ->generate(
+                            $insideClassMetadata,
+                            $smartFetch,
+                            ComponentFactory::LEAF,
+                            $insideAssociationMapping
+                        );
+                    continue;
+                }
+
+
+                if (($insideAssociationMapping['type'] === SmartFetchObjectManager::ONE_TO_MANY) &&
+                    count($insideClassMetadata->subClasses) > 0) {
+                    $fetchEagerChildren[] = $this->componentFactory
+                        ->generate(
+                            $insideClassMetadata,
+                            $smartFetch,
+                            ComponentFactory::LEAF,
+                            $insideAssociationMapping
+                        );
+                }
+            }
+
             if (count($children) === 0) {
-                $child = $this
+                $leaf = $this
                     ->componentFactory
                     ->generate($classMetaData, $smartFetch, ComponentFactory::LEAF, $associationMapping);
 
-                $component->addChild($child);
+                $leaf = Leaf::expect($leaf);
+
+                $leaf->setFetchEagerChildren($fetchEagerChildren);
+                $component->addChild($leaf);
                 continue;
             }
 
@@ -107,6 +139,8 @@ class SmartFetchTreeBuilder
                 ->generate($classMetaData, $smartFetch, ComponentFactory::COMPOSITE, $associationMapping);
 
             $composite = Composite::expect($composite);
+
+            $composite->setFetchEagerChildren($fetchEagerChildren);
 
             $component->addChild($composite);
             $this->buildEntityComponentTree($children, $composite, $smartFetch);

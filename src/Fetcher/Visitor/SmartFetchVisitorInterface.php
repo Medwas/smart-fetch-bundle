@@ -29,4 +29,6 @@ interface SmartFetchVisitorInterface
      * and update the root node's result
      */
     public function processResults(Component $component): void;
+
+    public function removeLastHistory(): void;
 }

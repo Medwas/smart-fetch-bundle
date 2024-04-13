@@ -21,8 +21,7 @@ class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGenerator
 {
     public function __construct(
         private readonly ComponentFactory $componentFactory,
-    )
-    {
+    ) {
     }
 
     private Component $lastJoined;
@@ -35,11 +34,10 @@ class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGenerator
      * @return QueryBuilder
      */
     public function generate(
-        Component $component ,
+        Component $component,
         HistoryPaths $paths,
         QueryBuilder $queryBuilder,
-    ): QueryBuilder
-    {
+    ): QueryBuilder {
         $this->lastJoined = $component;
         $this->lastAlias  = $component->getAlias();
 
@@ -57,6 +55,38 @@ class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGenerator
 
 
         }
+
+        return $queryBuilder;
+    }
+
+    public function generateFetchEager(
+        Component $component,
+        HistoryPaths $paths,
+        QueryBuilder $queryBuilder,
+    ): QueryBuilder
+    {
+        $this->lastJoined = $component;
+        $this->lastAlias  = $component->getAlias();
+
+        foreach ($paths as $path) {
+            $queryBuilder = $this->addInverseJoin($path, $queryBuilder);
+
+            if($path->isRoot()){
+                $parent = $this->lastJoined->getParent();
+                $parentProperty = $parent->getParentProperty();
+                $parentAlias = $parent->getAlias();
+
+                $queryBuilder->leftJoin($parentAlias . '.' . $parentProperty, $path->getAlias());
+            }
+
+            if (!$this->lastJoined->isRoot()) {
+                $this->lastAlias  = $this->lastJoined->getParent()->getAlias();
+            }
+
+            $this->lastJoined = $path;
+        }
+
+        $this->addInverseCondition($this->lastJoined, $queryBuilder);
 
         return $queryBuilder;
     }
@@ -80,11 +110,11 @@ class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGenerator
      */
     private function addInverseSelect(QueryBuilder $queryBuilder): QueryBuilder
     {
-        if($this->lastJoined->isRoot()){
+        if ($this->lastJoined->isRoot()) {
             return $queryBuilder;
         }
 
-        if(!$this->lastJoined->hasType(SmartFetchObjectManager::MANY_TO_MANY)){
+        if (!$this->lastJoined->hasType(SmartFetchObjectManager::MANY_TO_MANY)) {
             return $queryBuilder;
         }
 
@@ -98,11 +128,11 @@ class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGenerator
      * @param QueryBuilder $queryBuilder
      * @return QueryBuilder
      */
-    private function addInverseCondition(Component $component , QueryBuilder $queryBuilder): QueryBuilder
+    private function addInverseCondition(Component $component, QueryBuilder $queryBuilder): QueryBuilder
     {
         $parentAlias = $component->getAlias();
 
-        foreach ($component->getPropertyCondition() as $condition){
+        foreach ($component->getPropertyCondition() as $condition) {
             $queryBuilder = $queryBuilder
                 ->andWhere($parentAlias . '.' . $condition->property . $condition->operator . $condition->property)
                 ->setParameter($condition->property, $condition->value);

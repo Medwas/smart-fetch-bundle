@@ -34,6 +34,11 @@ class ArrayVisitor implements SmartFetchVisitorInterface
         $this->history = new HistoryPaths();
     }
 
+    public function removeLastHistory(): void
+    {
+        $this->history?->removeLast();
+    }
+
     /**
      * @param Component $component
      * @return void

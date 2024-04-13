@@ -63,14 +63,19 @@ class EntityQueryBuilderGenerator implements QueryBuilderGeneratorInterface
     {
         $parent = $component->getParent();
 
+//        $queryBuilder = $this->objectManager->createQueryBuilder()
+//            ->select($parent->getAlias())
+//            ->from($parent->getClassName(), $parent->getAlias());
+//
+//        $this->lastJoined = $parent;
+
         $queryBuilder = $this->objectManager->createQueryBuilder()
-            ->select($parent->getAlias())
-            ->from($parent->getClassName(), $parent->getAlias());
+            ->select($component->getAlias())
+            ->from($component->getClassName(), $component->getAlias());
 
-        $this->lastJoined = $parent;
+        $this->lastJoined = $component;
 
-        $this->addSelect($component, $queryBuilder);
-        $this->addJoin($component, $queryBuilder);
+        $this->addJoin($parent, $queryBuilder);
         $this->addCondition($parent, $queryBuilder);
 
         return $this->reverseQBGenerator->generate($parent, $paths, $queryBuilder);
@@ -93,7 +98,7 @@ class EntityQueryBuilderGenerator implements QueryBuilderGeneratorInterface
      */
     private function addJoin(Component $component, QueryBuilder $queryBuilder): void
     {
-        $queryBuilder->leftJoin($this->lastJoined->getAlias() . '.' . $component->getPropertyName(),
+        $queryBuilder->leftJoin($this->lastJoined->getAlias() . '.' . $this->lastJoined->getParentProperty(),
             $component->getAlias());
     }
 

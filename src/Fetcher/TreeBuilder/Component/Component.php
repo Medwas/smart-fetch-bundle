@@ -14,9 +14,12 @@ abstract class Component implements ComponentInterface
     protected bool $isRoot;
     private bool $isInitialized = false;
     private bool $hasBeenHydrated = false;
-    private ?Composite $parent = null;
+    private ?Component $parent = null;
     private ClassMetadata $classMetadata;
     private PropertyCondition $propertyCondition;
+
+    /** @var Component[] */
+    private array $fetchEagerChildren = [];
 
     private string $alias;
     private string $propertyName;
@@ -33,13 +36,13 @@ abstract class Component implements ComponentInterface
         return $this->isRoot;
     }
 
-    public function setParent(Composite $parent): static
+    public function setParent(Component $parent): static
     {
         $this->parent = $parent;
         return $this;
     }
 
-    public function getParent(): ?Composite
+    public function getParent(): ?Component
     {
         return $this->parent;
     }
@@ -183,6 +186,35 @@ abstract class Component implements ComponentInterface
         return $this->propertyName;
     }
 
+    public function getFetchEagerChildren(): array
+    {
+        return $this->fetchEagerChildren;
+    }
+
+    public function addFetchEagerChild(Component $child): static
+    {
+        $this->fetchEagerChildren[] = $child;
+        $child->setParent($this);
+
+        return $this;
+    }
+
+    /**
+     * @param Component[] $children
+     * @return $this
+     */
+    public function setFetchEagerChildren(array $children): static
+    {
+        $this->fetchEagerChildren = $children;
+
+        foreach ($children as $child){
+            $child->setParent($this);
+        }
+
+        return $this;
+    }
+
     abstract public function handle(SmartFetchVisitorInterface $visitor): void;
     abstract public function isComposite(): bool;
+
 }

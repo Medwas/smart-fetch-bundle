@@ -68,6 +68,13 @@ class EntityAddChildSelectQueryBuilderGenerator
             $child->setIsInitialized(true);
         }
 
+        foreach ($component->getFetchEagerChildren() as $eagerChild){
+            $this->addSelect($eagerChild, $queryBuilder);
+            $this->addJoin($eagerChild, $queryBuilder);
+            $this->addCondition($eagerChild, $queryBuilder);
+            $eagerChild->setIsInitialized(true);
+        }
+
         $this->resetConfig();
 
         return $queryBuilder;
