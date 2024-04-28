@@ -6,7 +6,6 @@ use Doctrine\ORM\QueryBuilder;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchEntity;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
-use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityFetchEagerQueryBuilderGenerator;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityQueryBuilderGenerator;
@@ -18,8 +17,6 @@ use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
 class EntityVisitor implements SmartFetchVisitorInterface
 {
-    private HistoryPaths $paths;
-
     /**
      * @param Configuration                                $configuration
      * @param EntityQueryBuilderGenerator                  $queryBuilderGenerator
@@ -30,18 +27,6 @@ class EntityVisitor implements SmartFetchVisitorInterface
         private readonly ResultsProcessor                       $resultsProcessor,
         private readonly NodeResultFactory                      $resultFactory,
     ) {
-        $this->initHistory();
-    }
-
-    private function initHistory(): void
-    {
-        $this->paths = new HistoryPaths();
-    }
-
-
-    public function removeLastHistory(): void
-    {
-        $this->paths?->removeLast();
     }
 
     public function visit(Node $node): void
@@ -67,21 +52,11 @@ class EntityVisitor implements SmartFetchVisitorInterface
         $queryBuilder = $this->generateQuery($node);
 
         $this->executeQueryBuilder($node, $queryBuilder);
-
-        if ($node->getParentNode() && $node->isComposite()) {
-            $this->paths->add($node->getParentNode());
-            return;
-        }
-        if($node instanceof CompositeNode)
-        {
-            $this->paths->removeLast();
-        }
-
     }
 
     private function generateQuery(Node $node): QueryBuilder
     {
-        return $this->queryBuilderGenerator->generate($node, $this->paths);
+        return $this->queryBuilderGenerator->generate($node);
     }
 
     /**
@@ -122,8 +97,5 @@ class EntityVisitor implements SmartFetchVisitorInterface
         // nothing to do here because entities are object and every is done in the fetch method, so we find
         // the final result by default in the root component
         $this->resultsProcessor->processResult($node);
-
-        // reset the history in case we will use this visitor in other places.
-        $this->initHistory();
     }
 }

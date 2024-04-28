@@ -4,7 +4,6 @@ namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\Generat
 
 use Doctrine\ORM\QueryBuilder;
 use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
-use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\NodeQueryBuilderGeneratorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
@@ -18,7 +17,7 @@ class RootNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
     {
     }
 
-    public function generate(Node $node, HistoryPaths $paths): QueryBuilder
+    public function generate(Node $node): QueryBuilder
     {
         $queryBuilder = $this->objectManager->createQueryBuilder()
             ->select($node->getAlias())

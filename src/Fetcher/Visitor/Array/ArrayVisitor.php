@@ -6,7 +6,6 @@ use Doctrine\ORM\QueryBuilder;
 use Exception;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchArray;
-use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\ArrayQueryBuilderGenerator;
 use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor;
 use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\NodeResultFactory;
@@ -16,7 +15,6 @@ use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
 class ArrayVisitor implements SmartFetchVisitorInterface
 {
-    private HistoryPaths $history;
 
     /**
      * @param ArrayQueryBuilderGenerator $queryBuilder
@@ -28,18 +26,8 @@ class ArrayVisitor implements SmartFetchVisitorInterface
         private readonly NodeResultFactory                  $resultFactory,
     )
     {
-        $this->initHistory();
     }
 
-    private function initHistory(): void
-    {
-        $this->history = new HistoryPaths();
-    }
-
-    public function removeLastHistory(): void
-    {
-        $this->history?->removeLast();
-    }
 
     /**
      * @param Node $node
@@ -73,13 +61,6 @@ class ArrayVisitor implements SmartFetchVisitorInterface
 
         $this->executeQueryBuilder($node, $queryBuilder);
         $this->generateIdentifiers($node);
-
-        //If the node has parent, and have association children
-        //So we must store the history, because we will visit his children
-        //and the history will help us build the join query (Reverse to the root query)
-        if($node->getParentNode() && $this->isRealComposite($node)) {
-            $this->history->add($node->getParentNode());
-        }
     }
 
     /**
@@ -110,9 +91,6 @@ class ArrayVisitor implements SmartFetchVisitorInterface
         }
 
         $nodeResult->setResult($processedResult);
-
-        // reset the history in case we will use this visitor in other places.
-        $this->initHistory();
     }
 
     /**
@@ -143,7 +121,7 @@ class ArrayVisitor implements SmartFetchVisitorInterface
      */
     private function generateQuery(Node $node): QueryBuilder
     {
-        return $this->queryBuilder->generate($node , $this->history);
+        return $this->queryBuilder->generate($node);
     }
 
     /**

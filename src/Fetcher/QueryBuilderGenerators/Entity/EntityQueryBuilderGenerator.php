@@ -3,7 +3,6 @@
 namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity;
 
 use Doctrine\ORM\QueryBuilder;
-use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\NodeQueryBuilderGeneratorInterface;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\QueryBuilderGeneratorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
@@ -25,16 +24,15 @@ class EntityQueryBuilderGenerator implements QueryBuilderGeneratorInterface
 
     /**
      * @param Node $node
-     * @param HistoryPaths $paths
      * @return QueryBuilder
      */
-    public function generate(Node $node , HistoryPaths $paths): QueryBuilder
+    public function generate(Node $node): QueryBuilder
     {
         $queryBuilder = null;
 
         foreach ($this->queryBuilderGenerators as $builderGenerator){
             if($builderGenerator->support($node)){
-                $queryBuilder = $builderGenerator->generate($node, $paths);
+                $queryBuilder = $builderGenerator->generate($node);
                 break;
             }
         }

@@ -62,8 +62,6 @@ class CompositeNode extends Node
         if($this->isRoot()){
             $visitor->processResults($this);
         }
-
-        $visitor->removeLastHistory();
     }
 
     public function isCollection(): bool

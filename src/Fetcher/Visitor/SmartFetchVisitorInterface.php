@@ -29,6 +29,4 @@ interface SmartFetchVisitorInterface
      * and update the root node's result
      */
     public function processResults(Node $node): void;
-
-    public function removeLastHistory(): void;
 }

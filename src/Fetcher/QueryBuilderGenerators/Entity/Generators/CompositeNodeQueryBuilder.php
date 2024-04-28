@@ -4,7 +4,6 @@ namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\Generat
 
 use Doctrine\ORM\QueryBuilder;
 use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
-use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityReverseQueryBuilderGenerator;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\NodeQueryBuilderGeneratorInterface;
@@ -14,13 +13,12 @@ class CompositeNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
 {
 
     public function __construct(
-        private readonly SmartFetchObjectManager                    $objectManager,
-        private readonly EntityReverseQueryBuilderGenerator         $reverseQBGenerator,
+        private readonly SmartFetchObjectManager    $objectManager,
     )
     {
     }
 
-    public function generate(Node $node, HistoryPaths $paths): QueryBuilder
+    public function generate(Node $node): QueryBuilder
     {
         $parentNode = $node->getParentNode();
 
@@ -36,7 +34,6 @@ class CompositeNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
             $this->addParentIdentifiersCondition($parentNode, $queryBuilder);
         }
 
-//        return $this->reverseQBGenerator->generate($parentNode, $paths, $queryBuilder);
         return $queryBuilder;
     }
 

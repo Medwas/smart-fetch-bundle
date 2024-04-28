@@ -5,7 +5,6 @@ namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\Generato
 use Doctrine\ORM\QueryBuilder;
 use Exception;
 use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
-use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\NodeQueryBuilderGeneratorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
@@ -13,19 +12,18 @@ use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 class CompositeNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
 {
     public function __construct(
-        private readonly SmartFetchObjectManager                    $objectManager,
+        private readonly SmartFetchObjectManager    $objectManager,
     )
     {
     }
 
     /**
      * @param Node $node
-     * @param HistoryPaths $paths
      * @return QueryBuilder
      * @throws Exception
      * @throws Exception
      */
-    public function generate(Node $node, HistoryPaths $paths): QueryBuilder
+    public function generate(Node $node): QueryBuilder
     {
         $parentNode = $node->getParentNode();
 
