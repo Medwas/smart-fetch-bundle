@@ -5,15 +5,31 @@ namespace Verclam\SmartFetchBundle\Attributes;
 abstract class SmartFetch
 {
     private string|int|null $queryValue;
+    public array $enableFilters = [];
+    public array $disableFilters = [];
 
     public function __construct(
         private ?string         $queryName,
         private ?string         $class = null,
         private ?string         $argumentName = null,
         private bool            $collection = false,
-        private ?string         $entityManager = null
+        private ?string         $entityManager = null,
+        private ?array          $options = [],
     )
     {
+     $this->initOptions($options);
+    }
+
+    private function initOptions(array $options): void
+    {
+        //TODO: Validate the type of the options
+        if (array_key_exists('enableFilters', $options)) {
+            $this->enableFilters = $options['enableFilters'];
+        }
+
+        if (array_key_exists('disableFilters', $options)) {
+            $this->disableFilters = $options['disableFilters'];
+        }
     }
 
     public function getClass(): ?string

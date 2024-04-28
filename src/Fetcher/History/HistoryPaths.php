@@ -4,12 +4,12 @@ namespace Verclam\SmartFetchBundle\Fetcher\History;
 
 use Countable;
 use Iterator;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 
 /**
  * Class PropertyPaths used to store the actual position in the tree
  * @package Verclam\SmartFetchBundle\Fetcher\PropertyPaths
- * @implements Iterator<int, Component>
+ * @implements Iterator<int, Node>
  * @implements Countable
  */
 class HistoryPaths implements Iterator, Countable
@@ -17,14 +17,13 @@ class HistoryPaths implements Iterator, Countable
 
     private int $position = 0;
     /**
-     * @var Component[]
+     * @var Node[]
      */
     private array $propertyPaths = [];
 
-    public function add(Component $component): static
+    public function add(Node $node): static
     {
-        $component->setIsInitialized(true);
-        $this->propertyPaths[] = $component;
+        $this->propertyPaths[] = $node;
         return $this;
     }
 
@@ -53,7 +52,7 @@ class HistoryPaths implements Iterator, Countable
         return $this->propertyPaths;
     }
 
-    public function get(int $index): Component
+    public function get(int $index): Node
     {
         return $this->propertyPaths[$index];
     }
@@ -64,7 +63,7 @@ class HistoryPaths implements Iterator, Countable
     }
 
     #[\ReturnTypeWillChange]
-    public function current(): Component
+    public function current(): Node
     {
         return $this->propertyPaths[$this->position];
     }

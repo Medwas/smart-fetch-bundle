@@ -90,6 +90,10 @@ class ArgumentNameResolver
         Request $request,
     ): void
     {
+        if(count($routeParams) === 0){
+            return;
+        }
+
         $attributes = $request->attributes;
 
         $routeParams = array_filter(

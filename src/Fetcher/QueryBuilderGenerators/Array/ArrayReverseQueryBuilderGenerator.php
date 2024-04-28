@@ -6,8 +6,8 @@ use Doctrine\ORM\QueryBuilder;
 use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\QueryBuilderReverseGeneratorInterface;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\ComponentFactory;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\NodeFactory;
 
 /**
  * In order to optimise the queries, in many case we optimise it
@@ -17,32 +17,33 @@ use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\ComponentFactory;
  * to fetch only the entities that corresponds to the condition, for example the {id}
  * of the root.
  */
+//TODO: to delete, we let it just in order to be sure that we will not need it anymore
 class ArrayReverseQueryBuilderGenerator implements QueryBuilderReverseGeneratorInterface
 {
     public function __construct(
-        private readonly ComponentFactory $componentFactory,
+        private readonly NodeFactory $nodeFactory,
     )
     {
     }
 
-    private Component $lastJoined;
+    private Node $lastJoined;
     private string $lastAlias;
 
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param HistoryPaths $paths
      * @param QueryBuilder $queryBuilder
      * @return QueryBuilder
      */
     public function generate(
-        Component $component ,
+        Node $node ,
         HistoryPaths $paths,
         QueryBuilder $queryBuilder,
     ): QueryBuilder
     {
-        $this->lastJoined = $component;
-        $this->lastAlias  = $component->getAlias();
+        $this->lastJoined = $node;
+        $this->lastAlias  = $node->getAlias();
 
         $queryBuilder = $this->addInverseSelect($queryBuilder);
 
@@ -51,7 +52,7 @@ class ArrayReverseQueryBuilderGenerator implements QueryBuilderReverseGeneratorI
             $queryBuilder = $this->addInverseCondition($path, $queryBuilder);
 
             if(!$this->lastJoined->isRoot()){
-                $this->lastAlias  = $this->lastJoined->getParent()->getAlias();
+                $this->lastAlias  = $this->lastJoined->getParentNode()->getAlias();
             }
 
             $this->lastJoined = $path;
@@ -63,14 +64,14 @@ class ArrayReverseQueryBuilderGenerator implements QueryBuilderReverseGeneratorI
     }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param QueryBuilder $queryBuilder
      * @return QueryBuilder
      */
-    private function addInverseJoin(Component $component, QueryBuilder $queryBuilder): QueryBuilder
+    private function addInverseJoin(Node $node, QueryBuilder $queryBuilder): QueryBuilder
     {
         $parentProperty = $this->lastJoined->getParentProperty();
-        $parentAlias = $this->lastJoined->getParent()->getAlias();
+        $parentAlias = $this->lastJoined->getParentNode()->getAlias();
 
         return $queryBuilder->leftJoin($this->lastAlias . '.' . $parentProperty, $parentAlias);
     }
@@ -89,21 +90,21 @@ class ArrayReverseQueryBuilderGenerator implements QueryBuilderReverseGeneratorI
             return $queryBuilder;
         }
 
-        $parentAlias = $this->lastJoined->getParent()->getAlias();
+        $parentAlias = $this->lastJoined->getParentNode()->getAlias();
 
         return $queryBuilder->addSelect($parentAlias);
     }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param QueryBuilder $queryBuilder
      * @return QueryBuilder
      */
-    private function addInverseCondition(Component $component , QueryBuilder $queryBuilder): QueryBuilder
+    private function addInverseCondition(Node $node , QueryBuilder $queryBuilder): QueryBuilder
     {
-        $parentAlias = $component->getAlias();
+        $parentAlias = $node->getAlias();
 
-        foreach ($component->getPropertyCondition() as $condition){
+        foreach ($node->getPropertyCondition() as $condition){
             $queryBuilder = $queryBuilder
                 ->andWhere($parentAlias . '.' . $condition->property . $condition->operator . $condition->property)
                 ->setParameter($condition->property, $condition->value);

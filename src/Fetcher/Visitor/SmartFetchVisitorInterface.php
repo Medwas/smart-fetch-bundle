@@ -5,7 +5,7 @@ namespace Verclam\SmartFetchBundle\Fetcher\Visitor;
 use Doctrine\ORM\QueryBuilder;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 
 interface SmartFetchVisitorInterface
 {
@@ -15,20 +15,20 @@ interface SmartFetchVisitorInterface
      * Generate the query builder for the node
      * fetch the result, and save it in the Node.
      */
-    public function fetchResult(Component $component);
+    public function fetchResult(Node $node);
 
 /**
      * Start visiting the tree beginning from the root node
-     * @param Component $component
+     * @param Node $node
      * @return void
      */
-    public function visit(Component $component): void;
+    public function visit(Node $node): void;
 
     /**
      * Join all the node's result to the root node,
      * and update the root node's result
      */
-    public function processResults(Component $component): void;
+    public function processResults(Node $node): void;
 
     public function removeLastHistory(): void;
 }

@@ -6,8 +6,8 @@ use Doctrine\ORM\QueryBuilder;
 use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\QueryBuilderReverseGeneratorInterface;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\ComponentFactory;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\NodeFactory;
 
 /**
  * In order to optimise the queries, in many case we optimise it
@@ -20,26 +20,26 @@ use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\ComponentFactory;
 class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGeneratorInterface
 {
     public function __construct(
-        private readonly ComponentFactory $componentFactory,
+        private readonly NodeFactory $nodeFactory,
     ) {
     }
 
-    private Component $lastJoined;
+    private Node $lastJoined;
     private string $lastAlias;
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param HistoryPaths $paths
      * @param QueryBuilder $queryBuilder
      * @return QueryBuilder
      */
     public function generate(
-        Component $component,
+        Node $node,
         HistoryPaths $paths,
         QueryBuilder $queryBuilder,
     ): QueryBuilder {
-        $this->lastJoined = $component;
-        $this->lastAlias  = $component->getAlias();
+        $this->lastJoined = $node;
+        $this->lastAlias  = $node->getAlias();
 
         $queryBuilder = $this->addInverseSelect($queryBuilder);
 
@@ -48,60 +48,78 @@ class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGenerator
             $queryBuilder = $this->addInverseCondition($path, $queryBuilder);
 
             if(!$this->lastJoined->isRoot()){
-                $this->lastAlias  = $this->lastJoined->getParent()->getAlias();
+                $this->lastAlias  = $this->lastJoined->getParentNode()->getAlias();
             }
 
             $this->lastJoined = $path;
 
 
         }
-
-        return $queryBuilder;
-    }
-
-    public function generateFetchEager(
-        Component $component,
-        HistoryPaths $paths,
-        QueryBuilder $queryBuilder,
-    ): QueryBuilder
-    {
-        $this->lastJoined = $component;
-        $this->lastAlias  = $component->getAlias();
-
-        foreach ($paths as $path) {
-            $queryBuilder = $this->addInverseJoin($path, $queryBuilder);
-
-            if($path->isRoot()){
-                $parent = $this->lastJoined->getParent();
-                $parentProperty = $parent->getParentProperty();
-                $parentAlias = $parent->getAlias();
-
-                $queryBuilder->leftJoin($parentAlias . '.' . $parentProperty, $path->getAlias());
-            }
-
-            if (!$this->lastJoined->isRoot()) {
-                $this->lastAlias  = $this->lastJoined->getParent()->getAlias();
-            }
-
-            $this->lastJoined = $path;
-        }
-
-        $this->addInverseCondition($this->lastJoined, $queryBuilder);
 
         return $queryBuilder;
     }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param QueryBuilder $queryBuilder
      * @return QueryBuilder
      */
-    private function addInverseJoin(Component $component, QueryBuilder $queryBuilder): QueryBuilder
+    private function addInverseJoin(Node $node, QueryBuilder $queryBuilder): QueryBuilder
     {
         $parentProperty = $this->lastJoined->getParentProperty();
-        $parentAlias = $this->lastJoined->getParent()->getAlias();
+        $parentAlias = $this->lastJoined->getParentNode()->getAlias();
+
+        $associationClassname = $this->lastJoined
+            ->getClassMetadata()
+            ->getAssociationTargetClass(
+                $parentProperty
+            );
+        $nodeClassname = $node->getClassName();
+
+        if($associationClassname !== $nodeClassname){
+            return $this->addInheritanceJoin($node, $queryBuilder);
+        }
 
         return $queryBuilder->leftJoin($this->lastAlias . '.' . $parentProperty, $parentAlias);
+    }
+
+    private function addInheritanceJoin(Node $node, QueryBuilder $queryBuilder): QueryBuilder
+    {
+        if(!$node->isSuccessorEntity()){
+            return $queryBuilder;
+        }
+
+        $parentClassname = $this->lastJoined
+            ->getClassMetadata()
+            ->getAssociationTargetClass(
+                $this->lastJoined->getParentProperty()
+            );
+
+        foreach ($node->getInheritedClassMetadatas() as $inheritedClassMetadata){
+            if($parentClassname !== $inheritedClassMetadata->getName()){
+                continue;
+            }
+
+            $childClassMetadata = $node->getClassMetadata();
+            $childClassname = $childClassMetadata->getName();
+            $childPropertyName = $this->lastJoined->getParentProperty();
+            $childAlias = $childPropertyName[0] . $childPropertyName[-1] . '_a' . rand(0, PHP_INT_MAX);
+            //TODO: Manage composte identifier
+            $childIdentifier = $childClassMetadata->getIdentifier()[0];
+            $parentIdentifier = $inheritedClassMetadata->getIdentifier()[0];
+
+            $queryBuilder->leftJoin($this->lastJoined->getAlias() . '.' . $this->lastJoined->getParentProperty(),
+                $childAlias);
+            $queryBuilder->innerJoin(
+                $childClassname,
+                $node->getAlias(),
+                'WITH',
+                $node->getAlias() . '.' . $childIdentifier .
+                ' = ' . $childAlias . '.' . $parentIdentifier
+            );
+            break;
+        }
+        return $queryBuilder;
     }
 
     /**
@@ -118,21 +136,21 @@ class EntityReverseQueryBuilderGenerator implements QueryBuilderReverseGenerator
             return $queryBuilder;
         }
 
-        $parentAlias = $this->lastJoined->getParent()->getAlias();
+        $parentAlias = $this->lastJoined->getParentNode()->getAlias();
 
         return $queryBuilder->addSelect($parentAlias);
     }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param QueryBuilder $queryBuilder
      * @return QueryBuilder
      */
-    private function addInverseCondition(Component $component, QueryBuilder $queryBuilder): QueryBuilder
+    private function addInverseCondition(Node $node, QueryBuilder $queryBuilder): QueryBuilder
     {
-        $parentAlias = $component->getAlias();
+        $parentAlias = $node->getAlias();
 
-        foreach ($component->getPropertyCondition() as $condition) {
+        foreach ($node->getPropertyCondition() as $condition) {
             $queryBuilder = $queryBuilder
                 ->andWhere($parentAlias . '.' . $condition->property . $condition->operator . $condition->property)
                 ->setParameter($condition->property, $condition->value);

@@ -24,7 +24,8 @@ class EntityTreeBuilder extends AbstractTreeBuilder
 
     protected function buildTreeAssociations(array &$mappers, ClassMetadata $classMetadata): array
     {
-        return $this->buildArrayTree($mappers);
+        $joinEntities = $this->orderJoinEntities($mappers);
+        return $this->buildArrayTree($joinEntities, isRoot: true);
     }
 
     /**
@@ -35,7 +36,22 @@ class EntityTreeBuilder extends AbstractTreeBuilder
        return $this->buildArrayTreeForSerialization($mappers, $classMetadata);
     }
 
-    private function buildArrayTree(array &$joinEntities, array &$parent = []): array
+    private function orderJoinEntities(array $joinEntities): array
+    {
+        return array_reduce($joinEntities, function (array $carry, string $joinEntity) {
+            $entities = explode('.', $joinEntity);
+
+            if (count($entities) !== 1) {
+                $carry[] = $joinEntity;
+                return $carry;
+            }
+
+            array_splice($carry, 0,0, $joinEntity);
+            return $carry;
+        }, []);
+    }
+
+    private function buildArrayTree(array &$joinEntities, array &$parent = [], bool $isRoot = false): array
     {
         foreach ($joinEntities as $key => $joinEntity) {
             if (count($joinEntities) === 0) {
@@ -44,7 +60,7 @@ class EntityTreeBuilder extends AbstractTreeBuilder
 
             $entities = explode('.', $joinEntity);
 
-            if (count($entities) === 1) {
+            if (count($entities) === 1 && $isRoot = true) {
                 [$field] = $entities;
                 $parent[$field] = [];
                 unset($joinEntities[$key]);
@@ -65,8 +81,8 @@ class EntityTreeBuilder extends AbstractTreeBuilder
                 continue;
             }
 
-            foreach ($parent as $keyInner => $parentValue) {
-                $parent[$keyInner] = $this->buildArrayTree($joinEntities, $parent[$keyInner]);
+            foreach ($parent as &$parentValue) {
+               $this->buildArrayTree($joinEntities, $parentValue);
             }
 
         }
