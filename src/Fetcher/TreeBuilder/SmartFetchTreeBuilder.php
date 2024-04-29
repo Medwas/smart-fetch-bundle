@@ -29,9 +29,9 @@ class SmartFetchTreeBuilder
      * @param TreeBuilderHandler $treeBuilderHandler
      */
     public function __construct(
-        private readonly SmartFetchObjectManager $objectManager,
-        private readonly NodeFactory        $componentFactory,
-        private readonly TreeBuilderHandler      $treeBuilderHandler,
+        private readonly SmartFetchObjectManager    $objectManager,
+        private readonly NodeFactory                $componentFactory,
+        private readonly TreeBuilderHandler         $treeBuilderHandler,
     ) {
     }
 
@@ -44,7 +44,7 @@ class SmartFetchTreeBuilder
         $classMetaData = $this->objectManager->getClassMetadata($smartFetch->getClass());
 
         $arrayTree  = $this->treeBuilderHandler->handle($smartFetch, $classMetaData);
-        $successorsClassMetadatas = $this->retrieveSuccessorsClassMetadatas($classMetaData);
+        $successorsClassMetadatas = $this->retrieveSuccessorsClassMetadata($classMetaData);
 
         $parent     = $this->componentFactory->generate(
             $classMetaData,
@@ -58,7 +58,7 @@ class SmartFetchTreeBuilder
             throw new Error('First parent must be a root');
         }
 
-        return $this->buildEntityComponentTree($arrayTree, $parent, $smartFetch);
+        return $this->buildNodeTree($arrayTree, $parent, $smartFetch);
     }
 
     /**
@@ -67,7 +67,7 @@ class SmartFetchTreeBuilder
      * Using the arrayTree
      * @throws Exception
      */
-    private function buildEntityComponentTree(
+    private function buildNodeTree(
         array           $orderedArray,
         CompositeNode   $compositeNode,
         SmartFetch      $smartFetch
@@ -110,7 +110,7 @@ class SmartFetchTreeBuilder
             $associationMapping = $metadata->getAssociationMapping($parentProperty);
             $classMetaData = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
 
-            $successorsClassMetadatas = $this->retrieveSuccessorsClassMetadatas($classMetaData);
+            $successorsClassMetadatas = $this->retrieveSuccessorsClassMetadata($classMetaData);
 
             if (count($childrenProperty) === 0) {
                 $leafNode = $this->createLeafNode(
@@ -121,6 +121,7 @@ class SmartFetchTreeBuilder
                 );
 
                 $compositeNode->addChild($leafNode);
+                $this->verifyIsFetchEager($leafNode, $associationMapping);
                 continue;
             }
 
@@ -137,8 +138,9 @@ class SmartFetchTreeBuilder
             $composite = CompositeNode::expect($composite);
 
             $compositeNode->addChild($composite);
-            $this->buildEntityComponentTree($childrenProperty, $composite, $smartFetch);
-            $this->createCompositeFetchEager($composite, $classMetaData, $smartFetch);
+            $this->buildNodeTree($childrenProperty, $composite, $smartFetch);
+            $this->createCompositeFetchEager($composite, $classMetaData);
+            $this->verifyIsFetchEager($compositeNode, $associationMapping);
         }
 
         return $compositeNode;
@@ -148,7 +150,7 @@ class SmartFetchTreeBuilder
      * @param ClassMetadata $classMetadata
      * @param ClassMetadata[] $successorClassMetadatas
      */
-    private function retrieveSuccessorsClassMetadatas(ClassMetadata $classMetadata): array
+    private function retrieveSuccessorsClassMetadata(ClassMetadata $classMetadata): array
     {
         $successorsClassMetadatas = [];
 
@@ -164,7 +166,7 @@ class SmartFetchTreeBuilder
      * @return Node[]
      * @throws Exception
      */
-    private function retrieveFetchEageredEntities(ClassMetadata $classMetadata): array
+    private function retrieveFetchEagerEntities(ClassMetadata $classMetadata): array
     {
         $fetchEagerChildren = [];
 
@@ -178,8 +180,8 @@ class SmartFetchTreeBuilder
             //vendor/doctrine/orm/lib/Doctrine/ORM/UnitOfWork.php:2968
             if ((($insideAssociationMapping['type'] === SmartFetchObjectManager::ONE_TO_ONE)
                 && !$insideAssociationMapping['isOwningSide']) ||
-                ($insideAssociationMapping['type'] === SmartFetchObjectManager::ONE_TO_MANY) &&
-                count($insideClassMetadata->subClasses) > 0
+                (($insideAssociationMapping['type'] === SmartFetchObjectManager::ONE_TO_MANY) &&
+                count($insideClassMetadata->subClasses) > 0)
             ) {
                 $fetchEagerChildren[] = [
                     'options'           => $insideAssociationMapping,
@@ -201,7 +203,7 @@ class SmartFetchTreeBuilder
         array $options = []
     ): Node {
         $type = NodeFactory::LEAF;
-        $fetchEagerChildren = $this->retrieveFetchEageredEntities($classMetadata);
+        $fetchEagerChildren = $this->retrieveFetchEagerEntities($classMetadata);
 
         if (count($fetchEagerChildren) > 0) {
             $type = NodeFactory::COMPOSITE;
@@ -245,10 +247,9 @@ class SmartFetchTreeBuilder
     private function createCompositeFetchEager(
         CompositeNode   $compositeNode,
         ClassMetadata   $classMetadata,
-        SmartFetch      $smartFetch,
     ): void
     {
-        $fetchEagerChildren = $this->retrieveFetchEageredEntities($classMetadata);
+        $fetchEagerChildren = $this->retrieveFetchEagerEntities($classMetadata);
 
         if(count($fetchEagerChildren) === 0){
             return;
@@ -269,6 +270,18 @@ class SmartFetchTreeBuilder
                 );
             $fetchEagerNode->setFetchEager(true);
             $compositeNode->addChild($fetchEagerNode);
+        }
+    }
+
+    private function verifyIsFetchEager(Node $node, $options): void
+    {
+        if(
+            key_exists('mappedBy', $options) &&
+            key_exists('inversedBy', $options) &&
+            !$options['mappedBy'] &&
+            !$options['inversedBy']
+        ){
+            $node->setFetchEager(true);
         }
     }
 }

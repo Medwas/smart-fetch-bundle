@@ -41,37 +41,37 @@ class ResultsProcessor implements ResultsProcessorInterface
                 continue;
             }
 
-            $isRealLastChild = $this->isLastChild($child);
+            $isLastChild = $this->isLastChild($child);
 
-            if($child instanceof CompositeNode && $isRealLastChild){
-                foreach ($this->hydrators as $hydrator){
-                    if($hydrator->support($child)){
-                        $hydrator->hydrate($child, $result);
-                        $node->getNodeResult()->setResult($result);
-                        break;
-                    }
-                }
+            if($isLastChild){
+                $this->hydrate($child, $result);
             }
 
-            if(!$isRealLastChild){
+            if(!$isLastChild){
                 $childResult = $child->getNodeResult()?->getResult();
 
                 if(null === $childResult){
-                    throw new Exception('Child result should never be null at this point!!');
+                    continue;
                 }
 
                 $this->processResult($child, $childResult);
                 $child->getNodeResult()->setResult($childResult);
-                foreach ($this->hydrators as $hydrator){
-                    if($hydrator->support($child)){
-                        $hydrator->hydrate($child, $result);
-                        $node->getNodeResult()->setResult($result);
-                        break;
-                    }
-                }
+                $this->hydrate($child, $result);
             }
         }
 
+    }
+
+    private function hydrate(Node $child, array &$result): void
+    {
+        $parentNode = $child->getParentNode();
+        foreach ($this->hydrators as $hydrator){
+            if($hydrator->support($child)){
+                $hydrator->hydrate($child, $result);
+                $parentNode->getNodeResult()->setResult($result);
+                break;
+            }
+        }
     }
 
     /**
@@ -82,7 +82,7 @@ class ResultsProcessor implements ResultsProcessorInterface
     private function isLastChild(Node $node): bool
     {
         if(!($node instanceof CompositeNode)){
-            return true;
+            return false;
         }
 
         /** @var Node $child */
