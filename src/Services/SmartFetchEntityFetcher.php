@@ -10,6 +10,7 @@ use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\FilterPagerResolver;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
@@ -28,6 +29,7 @@ class SmartFetchEntityFetcher
         private readonly SmartFetchObjectManager $objectManager,
         private readonly SmartFetchTreeBuilder   $treeBuilder,
         private readonly ArgumentNameResolver    $argumentNameResolver,
+        private readonly FilterPagerResolver     $filterPagerResolver,
         private readonly iterable                $visitors,
     )
     {
@@ -80,6 +82,8 @@ class SmartFetchEntityFetcher
         //TODO: add the configuration
         $this->configuration->configure([]);
 
+        $this->resolveFilterPager($request, $smartFetch);
+
         $tree = $this->treeBuilder->buildTree($smartFetch);
 
         foreach ($this->visitors as $visitor) {
@@ -91,6 +95,17 @@ class SmartFetchEntityFetcher
         }
 
         return [$tree->getNodeResult()->getResult()];
+    }
+
+    private function resolveFilterPager(Request $request, SmartFetch $smartFetch): void
+    {
+        $filterPager = $this->filterPagerResolver->resolve($request, $smartFetch);
+
+        if(null === $filterPager){
+            return;
+        }
+
+        $smartFetch->setFilterPager($filterPager);
     }
 
 }
