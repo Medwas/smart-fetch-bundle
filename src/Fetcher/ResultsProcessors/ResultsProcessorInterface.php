@@ -3,7 +3,7 @@
 namespace Verclam\SmartFetchBundle\Fetcher\ResultsProcessors;
 
 use Doctrine\Persistence\Mapping\ClassMetadata;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 
 interface ResultsProcessorInterface
 {
@@ -13,5 +13,5 @@ interface ResultsProcessorInterface
      * the objectives of this function is to join the result of every child node
      * with the result of the root node.
      */
-    public function processResult(Component $component, array &$result = []): array;
+    public function processResult(Node $node, array &$result = []): void;
 }

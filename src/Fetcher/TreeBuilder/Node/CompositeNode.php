@@ -1,20 +1,19 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component;
+namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node;
 
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
-class Composite extends Component
+class CompositeNode extends Node
 {
     /**
-     * @var Component[]
+     * @var Node[]
      */
     private array $children = [];
     private bool $isCollection = false;
 
-    public function __construct($root = false)
+    public function __construct()
     {
-        $this->isRoot = $root;
         parent::__construct();
     }
 
@@ -28,16 +27,23 @@ class Composite extends Component
         return $this->children;
     }
 
-    public function addChild(ComponentInterface $child): static
+    public function addChild(NodeInterface $child): static
     {
         $this->children[] = $child;
-        $child->setParent($this);
+        $child->setParentNode($this);
+        return $this;
+    }
+
+    public function setChildren(array $children): static
+    {
+        $this->children = $children;
+
         return $this;
     }
 
     public function handle(SmartFetchVisitorInterface $visitor): void
     {
-        if (!$this->isInitialized()) {
+        if (null === $this->getNodeResult()) {
             $visitor->fetchResult($this);
         }
 

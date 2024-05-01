@@ -12,22 +12,60 @@
 
         <service id="verclam.smart-fetch.configuration" class="Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration" autowire="true" public="false" />
 
-        <service id="verclam.smart-fetch.array-results-processor" class="Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor" autowire="true" public="false" />
-
-        <service id="verclam.smart-fetch.component-factory" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\ComponentFactory" autowire="true" public="false">
-            <argument type="service" id="verclam.smart-fetch.condition-factory"/>
-        </service>
+        <service id="verclam.smart-fetch.node-result-factory" class="Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\NodeResultFactory" autowire="true" public="false" />
 
         <service id="verclam.smart-fetch.condition-factory" class="Verclam\SmartFetchBundle\Fetcher\Condition\ConditionFactory" autowire="true" public="false" />
 
-        <service id="verclam.smart-fetch.component-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder" autowire="true" public="false">
+        <service id="verclam.smart-fetch.entity-many-to-many-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Entity\ManyToManyHydrator" autowire="true" public="false" />
+        <service id="verclam.smart-fetch.entity-one-to-many-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Entity\OneToManyHydrator" autowire="true" public="false" />
+        <service id="verclam.smart-fetch.entity-one-to-one-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Entity\OneToOneHydrator" autowire="true" public="false" />
+        <service id="verclam.smart-fetch.entity-many-to-one-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Entity\ManyToOneHydrator" autowire="true" public="false" />
+
+        <service id="verclam.smart-fetch.array-collection-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Array\CollectionHydrator" autowire="true" public="false" />
+        <service id="verclam.smart-fetch.array-collection-arrays-to-root-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Array\CollectionArraysToRootHydrator" autowire="true" public="false" />
+        <service id="verclam.smart-fetch.array-single-array-to-root-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Array\SingleArrayToRootHydrator" autowire="true" public="false" />
+
+        <service id="verclam.smart-fetch.array-root-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\Generators\RootNodeQueryBuilder" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetch.object-manager"/>
-            <argument type="service" id="verclam.smart-fetch.component-factory"/>
-            <argument type="service" id="verclam.smart-fetch.tree-builder-handler"/>
         </service>
 
-        <service id="verclam.smart-fetch.entity-reverse-query-generator" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityReverseQueryBuilderGenerator" autowire="true" public="false">
-            <argument type="service" id="verclam.smart-fetch.component-factory"/>
+        <service id="verclam.smart-fetch.array-composite-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\Generators\CompositeNodeQueryBuilder" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetch.object-manager"/>
+        </service>
+
+        <service id="verclam.smart-fetch.entity-root-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\Generators\RootNodeQueryBuilder" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetch.object-manager"/>
+        </service>
+
+        <service id="verclam.smart-fetch.entity-composite-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\Generators\CompositeNodeQueryBuilder" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetch.object-manager"/>
+        </service>
+
+        <service id="verclam.smart-fetch.array-results-processor" class="Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor" autowire="true" public="false" >
+            <argument type="iterator">
+                <argument type="service" id="verclam.smart-fetch.array-collection-hydrator"/>
+                <argument type="service" id="verclam.smart-fetch.array-single-array-to-root-hydrator"/>
+                <argument type="service" id="verclam.smart-fetch.array-collection-arrays-to-root-hydrator"/>
+            </argument>
+        </service>
+
+        <service id="verclam.smart-fetch.entity-results-processor" class="Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Entity\ResultsProcessor" autowire="true" public="false" >
+            <argument type="iterator">
+                <argument type="service" id="verclam.smart-fetch.entity-many-to-many-hydrator"/>
+                <argument type="service" id="verclam.smart-fetch.entity-one-to-many-hydrator"/>
+                <argument type="service" id="verclam.smart-fetch.entity-one-to-one-hydrator"/>
+                <argument type="service" id="verclam.smart-fetch.entity-many-to-one-hydrator"/>
+            </argument>
+        </service>
+
+        <service id="verclam.smart-fetch.node-factory" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\NodeFactory" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetch.condition-factory"/>
+        </service>
+
+        <service id="verclam.smart-fetch.component-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetch.object-manager"/>
+            <argument type="service" id="verclam.smart-fetch.node-factory"/>
+            <argument type="service" id="verclam.smart-fetch.tree-builder-handler"/>
         </service>
 
         <service id="verclam.smart-fetch.entity-add-child-select-query-generator" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityAddChildSelectQueryBuilderGenerator">
@@ -35,13 +73,11 @@
         </service>
 
         <service id="verclam.smart-fetch.entity-query-generator" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityQueryBuilderGenerator" autowire="true" public="false" >
-            <argument type="service" id="verclam.smart-fetch.object-manager"/>
-            <argument type="service" id="verclam.smart-fetch.entity-reverse-query-generator"/>
             <argument type="service" id="verclam.smart-fetch.entity-add-child-select-query-generator"/>
-        </service>
-
-        <service id="verclam.smart-fetch.array-reverse-query-generator" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\ArrayReverseQueryBuilderGenerator" autowire="true" public="false">
-            <argument type="service" id="verclam.smart-fetch.component-factory"/>
+            <argument type="iterator">
+                <argument type="service" id="verclam.smart-fetch.entity-composite-node-query-builder"/>
+                <argument type="service" id="verclam.smart-fetch.entity-root-node-query-builder"/>
+            </argument>
         </service>
 
         <service id="verclam.smart-fetch.array-add-child-select-query-generator" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\ArrayAddChildSelectQueryBuilderGenerator">
@@ -49,20 +85,24 @@
         </service>
 
         <service id="verclam.smart-fetch.array-query-generator" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\ArrayQueryBuilderGenerator" autowire="true" public="false" >
-            <argument type="service" id="verclam.smart-fetch.object-manager"/>
-            <argument type="service" id="verclam.smart-fetch.array-reverse-query-generator"/>
             <argument type="service" id="verclam.smart-fetch.array-add-child-select-query-generator"/>
+            <argument type="iterator">
+                <argument type="service" id="verclam.smart-fetch.array-composite-node-query-builder"/>
+                <argument type="service" id="verclam.smart-fetch.array-root-node-query-builder"/>
+            </argument>
         </service>
-
 
         <service id="verclam.smart-fetch.entity-visitor" class="Verclam\SmartFetchBundle\Fetcher\Visitor\Entity\EntityVisitor" >
             <argument type="service" id="verclam.smart-fetch.configuration"/>
             <argument type="service" id="verclam.smart-fetch.entity-query-generator"/>
+            <argument type="service" id="verclam.smart-fetch.entity-results-processor"/>
+            <argument type="service" id="verclam.smart-fetch.node-result-factory"/>
         </service>
 
         <service id="verclam.smart-fetch.array-visitor" class="Verclam\SmartFetchBundle\Fetcher\Visitor\Array\ArrayVisitor" >
             <argument type="service" id="verclam.smart-fetch.array-query-generator"/>
             <argument type="service" id="verclam.smart-fetch.array-results-processor"/>
+            <argument type="service" id="verclam.smart-fetch.node-result-factory"/>
         </service>
 
         <service id="verclam.smart-fetcher.value-resolver" class="Verclam\SmartFetchBundle\Services\ArgumentResolver" autowire="true" public="false">

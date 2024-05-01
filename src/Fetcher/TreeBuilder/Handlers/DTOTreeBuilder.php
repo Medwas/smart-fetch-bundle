@@ -13,7 +13,7 @@ class DTOTreeBuilder extends AbstractTreeBuilder
         return $smartFetch instanceof SmartFetchDTO;
     }
 
-    protected function buildTreeAssociations(array &$mappers, ClassMetadata $classMetadata): array
+    protected function buildTreeAssociations(array &$mappers, ClassMetadata $classMetadata, bool $isRoot = false): array
     {
         return [];
     }

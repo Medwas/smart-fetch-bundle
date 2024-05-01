@@ -31,6 +31,10 @@ abstract class AbstractTreeBuilder implements TreeBuilderInterface
     #[ArrayShape(['identifier' => 'string', 'associations' => 'array', 'scalars' => 'array'])]
     public function getClassMetadataInfo(ClassMetadata $classMetadata): array
     {
+//        $scalars = [];
+//        foreach($classMetadata->getFieldNames() as $key => $fieldName){
+//            $scalars[$fieldName] = [];
+//        }
         return [
             'identifier'    => $classMetadata->getIdentifier()[0],
             'associations'  => $classMetadata->getAssociationNames(),

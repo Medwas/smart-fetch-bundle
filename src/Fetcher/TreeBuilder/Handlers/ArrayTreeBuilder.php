@@ -2,6 +2,7 @@
 
 namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers;
 
+use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use ReflectionException;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -23,8 +24,13 @@ class ArrayTreeBuilder extends AbstractTreeBuilder
 
     /**
      * @throws ReflectionException|MappingException
+     * @throws MappingException
      */
-    protected function buildTreeAssociations(array &$mappers, ClassMetadata $classMetadata): array
+    protected function buildTreeAssociations(
+        array           &$mappers,
+        ClassMetadata   $classMetadata,
+        ?string         $associationParentFieldName = null,
+    ): array
     {
         //TODO: has to be done in tree association mode
         $result     = [];
@@ -35,32 +41,54 @@ class ArrayTreeBuilder extends AbstractTreeBuilder
             'scalars'       => $scalars
         ] = $this->getClassMetadataInfo($classMetadata);
 
+        $arrayScalars = [];
+
+        foreach($scalars as $key => $scalarFieldName){
+            $arrayScalars[$scalarFieldName] = [];
+        }
+
         foreach ($mappers as $mapper) {
-            $parent = $mapper;
-            $child  = null;
+            $parentFieldName = $mapper;
+            $childFieldName  = null;
 
             if (str_contains($mapper, '.')) {
-                [$parent, $child] = explode('.', $mapper);
+                [$parentFieldName, $childFieldName] = explode('.', $mapper);
             }
 
-            $field = $child ?? $parent;
-
-            if (!$classMetadata->hasAssociation($field)) {
+            if(null === $childFieldName && null !== $associationParentFieldName){
                 continue;
             }
 
-            $associationMapping     = $classMetadata->getAssociationMapping($field);
+            $currentFieldName = $childFieldName ?? $parentFieldName;
 
-            $targetEntityMetadata   = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
-            $mappers                = array_diff($mappers, [$mapper]);
-            $result[$field]        = [
-                'identifier'    => $identifier,
-                'scalars'       => $scalars,
-                'associations'  => $this->buildTreeAssociations($mappers, $targetEntityMetadata)
-            ];
+            if (!$classMetadata->hasAssociation($currentFieldName)) {
+                continue;
+            }
+
+            if(null !== $childFieldName &&
+                $parentFieldName !== $associationParentFieldName
+            ){
+                continue;
+            }
+
+            $childAssociationMapping    = $classMetadata
+                ->getAssociationMapping($currentFieldName);
+
+            $targetEntityMetadata       = $this->objectManager
+                ->getClassMetadata($childAssociationMapping['targetEntity']);
+
+            $mappers                    = array_diff($mappers, [$mapper]);
+            $result[$currentFieldName]  = $this->buildTreeAssociations(
+                    $mappers,
+                    $targetEntityMetadata,
+                    associationParentFieldName: $currentFieldName
+                );
         }
 
-        return $result;
+        return [
+            ...$arrayScalars,
+            ...$result
+        ];
     }
 
     protected function buildTreeSerializationGroups(

@@ -6,8 +6,8 @@ use Doctrine\ORM\QueryBuilder;
 use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\CompositeNode;
 
 /**
  * This class will addSelect to child in we want to maximize
@@ -38,21 +38,21 @@ class EntityAddChildSelectQueryBuilderGenerator
     }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param QueryBuilder $queryBuilder
      * @return QueryBuilder
      */
-    public function generate(Component $component , QueryBuilder $queryBuilder): QueryBuilder
+    public function generate(Node $node , QueryBuilder $queryBuilder): QueryBuilder
     {
-        if(!($component instanceof Composite))
+        if(!($node instanceof CompositeNode))
         {
             return $queryBuilder;
         }
 
         $this->initMaxConfiguration();
 
-        foreach ($component->getChildren() as $child){
-            if($child->isInitialized()){
+        foreach ($node->getChildren() as $child){
+            if($child->isScalar()){
                 continue;
             }
 
@@ -65,7 +65,15 @@ class EntityAddChildSelectQueryBuilderGenerator
             $this->addSelect($child, $queryBuilder);
             $this->addJoin($child, $queryBuilder);
             $this->addCondition($child, $queryBuilder);
-            $child->setIsInitialized(true);
+        }
+
+        foreach ($node->getChildren() as $childNode){
+            if(!$childNode->isFetchEager()){
+                continue;
+            }
+            $this->addSelect($childNode, $queryBuilder);
+            $this->addJoin($childNode, $queryBuilder);
+            $this->addCondition($childNode, $queryBuilder);
         }
 
         $this->resetConfig();
@@ -74,37 +82,37 @@ class EntityAddChildSelectQueryBuilderGenerator
     }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param QueryBuilder $queryBuilder
      * @return void
      */
-    private function addSelect(Component $component, QueryBuilder $queryBuilder): void
+    private function addSelect(Node $node, QueryBuilder $queryBuilder): void
     {
-        $queryBuilder->addSelect($component->getAlias());
+        $queryBuilder->addSelect($node->getAlias());
     }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param QueryBuilder $queryBuilder
      * @return void
      */
-    private function addJoin(Component $component, QueryBuilder $queryBuilder): void
+    private function addJoin(Node $node, QueryBuilder $queryBuilder): void
     {
-        $queryBuilder->leftJoin($component->getParent()->getAlias() . '.' . $component->getPropertyName(),
-            $component->getAlias());
+        $queryBuilder->leftJoin($node->getParentNode()->getAlias() . '.' . $node->getFieldName(),
+            $node->getAlias());
     }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @param QueryBuilder $queryBuilder
      * @return void
      */
-    private function addCondition(Component $component, QueryBuilder $queryBuilder): void
+    private function addCondition(Node $node, QueryBuilder $queryBuilder): void
     {
         /** @var Condition $condition */
-        foreach ($component->getPropertyCondition() as $condition){
+        foreach ($node->getPropertyCondition() as $condition){
             $queryBuilder = $queryBuilder
-                ->andWhere($component->getAlias() . '.' . $condition->property . $condition->operator . $condition->property)
+                ->andWhere($node->getAlias() . '.' . $condition->property . $condition->operator . $condition->property)
                 ->setParameter($condition->property, $condition->value);
         }
     }

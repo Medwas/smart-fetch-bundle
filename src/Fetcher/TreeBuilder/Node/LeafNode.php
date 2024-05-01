@@ -1,15 +1,15 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component;
+namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node;
 
 use Doctrine\Persistence\Mapping\ClassMetadata;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\NodeResult;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
-class Leaf extends Component
+class LeafNode extends Node
 {
-    public function __construct(bool $root = false)
+    public function __construct()
     {
-        $this->isRoot = $root;
         parent::__construct();
     }
 
@@ -21,5 +21,11 @@ class Leaf extends Component
     public function handle(SmartFetchVisitorInterface $visitor): void
     {
         $visitor->fetchResult($this);
+    }
+
+
+    public function isCollection(): bool
+    {
+        return false;
     }
 }

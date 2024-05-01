@@ -6,37 +6,32 @@ use Doctrine\ORM\QueryBuilder;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchEntity;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
-use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
-use Verclam\SmartFetchBundle\Fetcher\Hydrator\HydratorContainer;
+use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
+use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityFetchEagerQueryBuilderGenerator;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityQueryBuilderGenerator;
-use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\QueryBuilderGeneratorsContainer;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Entity\ResultsProcessor;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\NodeResultFactory;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\CompositeNode;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
 class EntityVisitor implements SmartFetchVisitorInterface
 {
-    private HistoryPaths $paths;
-
     /**
      * @param Configuration                                $configuration
-     * @param EntityQueryBuilderGenerator                  $queryBuilder
+     * @param EntityQueryBuilderGenerator                  $queryBuilderGenerator
      */
     public function __construct(
-        private readonly Configuration               $configuration,
-        private readonly EntityQueryBuilderGenerator $queryBuilder,
-    )
-    {
-        $this->initHistory();
+        private readonly Configuration                          $configuration,
+        private readonly EntityQueryBuilderGenerator            $queryBuilderGenerator,
+        private readonly ResultsProcessor                       $resultsProcessor,
+        private readonly NodeResultFactory                      $resultFactory,
+    ) {
     }
 
-    private function initHistory(): void
+    public function visit(Node $node): void
     {
-        $this->paths = new HistoryPaths();
-    }
-
-    public function visit(Component $component): void
-    {
-        $component->handle($this);
+        $node->handle($this);
     }
 
     public function support(SmartFetch $smartFetch): bool
@@ -47,50 +42,60 @@ class EntityVisitor implements SmartFetchVisitorInterface
     /**
      * @throws \Exception
      */
-    public function fetchResult(Component $component): void
+    public function fetchResult(Node $node): void
     {
-        //TODO: ADD MANAGEMENT OF THE MAX CONFIGURATION
-        $queryBuilder = $this->generateQuery($component);
-
-        //TODO: Must manage one_to_one inverse side which automatically eager fetched
-        //https://github.com/doctrine/orm/issues/4389
-        //https://github.com/doctrine/orm/issues/3778
-        //https://github.com/doctrine/orm/issues/4389
-        //vendor/doctrine/orm/lib/Doctrine/ORM/UnitOfWork.php:2968
-        $this->fetch($component, $queryBuilder);
-
-        if($component->getParent() && $component->isComposite()){
-            $this->paths->add($component->getParent());
+        if($node->isFetchEager()){
             return;
         }
 
-        $this->paths->removeLast();
+        //TODO: ADD MANAGEMENT OF THE MAX CONFIGURATION
+        $queryBuilder = $this->generateQuery($node);
+
+        $this->executeQueryBuilder($node, $queryBuilder);
     }
 
-    private function generateQuery(Component $component): QueryBuilder
+    private function generateQuery(Node $node): QueryBuilder
     {
-        return $this->queryBuilder->generate($component , $this->paths);
+        return $this->queryBuilderGenerator->generate($node);
     }
 
     /**
      * @throws \Exception
      */
-    private function fetch(Component $component, QueryBuilder $queryBuilder): void
+    private function executeQueryBuilder(Node $node, QueryBuilder $queryBuilder): void
     {
-        $result = match ($component->isRoot()){
-            true        => $queryBuilder->getQuery()->getOneOrNullResult(),
-            false       => $queryBuilder->getQuery()->getResult(),
+        $result = match (!$node->isRoot() || ($node instanceof CompositeNode && $node->isCollection())) {
+            true       => $queryBuilder->getQuery()->getResult(),
+            false      => $queryBuilder->getQuery()->getSingleResult(),
         };
 
-        $component->setResult($result);
+        $nodeResult = $this->resultFactory->create(
+            [
+                'queryBuilder' => $queryBuilder,
+                'result' => $result,
+            ]
+        );
+
+        $node->setNodeResult($nodeResult);
     }
 
-    public function processResults(Component $component): void
+    private function fetchNonRoot(Node $node, QueryBuilder $queryBuilder): mixed
+    {
+        return match ($node->getRelationType()) {
+            SmartFetchObjectManager::ONE_TO_MANY,
+            SmartFetchObjectManager::ONE_TO_ONE => $queryBuilder->getQuery()->getOneOrNullResult(),
+            SmartFetchObjectManager::MANY_TO_MANY,
+            SmartFetchObjectManager::MANY_TO_ONE => $queryBuilder->getQuery()->getResult()
+            };
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function processResults(Node $node): void
     {
         // nothing to do here because entities are object and every is done in the fetch method, so we find
         // the final result by default in the root component
-
-        // reset the history in case we will use this visitor in other places.
-        $this->initHistory();
+        $this->resultsProcessor->processResult($node);
     }
 }

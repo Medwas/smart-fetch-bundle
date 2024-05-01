@@ -1,27 +1,29 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component;
+namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node;
 
 use Error;
 use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use Verclam\SmartFetchBundle\Fetcher\Condition\PropertyCondition;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\NodeResult;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
-abstract class Component implements ComponentInterface
+abstract class Node implements NodeInterface
 {
-    protected bool $isRoot;
-    private bool $isInitialized = false;
-    private bool $hasBeenHydrated = false;
-    private ?Composite $parent = null;
+    private ?Node $parentNode = null;
+    private ?LeafNode $identifierNode = null;
     private ClassMetadata $classMetadata;
     private PropertyCondition $propertyCondition;
 
     private string $alias;
-    private string $propertyName;
-    private null|array|object $result = null;
+    private string $fieldName;
+    private ?NodeResult $nodeResult = null;
     protected array $propertyInformations;
+    /** @var ClassMetadata[]  */
+    private array $inheritedClassMetadatas = [];
+    private bool $fetchEager = false;
 
     public function __construct()
     {
@@ -30,18 +32,18 @@ abstract class Component implements ComponentInterface
 
     public function isRoot(): bool
     {
-        return $this->isRoot;
+        return null === $this->parentNode;
     }
 
-    public function setParent(Composite $parent): static
+    public function setParentNode(Node $parentNode): static
     {
-        $this->parent = $parent;
+        $this->parentNode = $parentNode;
         return $this;
     }
 
-    public function getParent(): ?Composite
+    public function getParentNode(): ?Node
     {
-        return $this->parent;
+        return $this->parentNode;
     }
 
     public function getClassMetadata(): ClassMetadata
@@ -57,17 +59,6 @@ abstract class Component implements ComponentInterface
      public function hasType(int $type): bool
      {
          return $this->propertyInformations['type'] === $type;
-     }
-
-     public function isInitialized(): bool
-     {
-         return $this->isInitialized;
-     }
-
-     public function setIsInitialized(bool $isInitialized): static
-     {
-            $this->isInitialized = $isInitialized;
-            return $this;
      }
 
     public function isScalar(): bool
@@ -86,15 +77,15 @@ abstract class Component implements ComponentInterface
         return $this;
     }
 
-    public function setPropertyName(string $propertyName): static
+    public function setFieldName(string $fieldName): static
     {
-        $this->propertyName = $propertyName;
+        $this->fieldName = $fieldName;
         return $this;
     }
 
-    public function getPropertyName(): string
+    public function getFieldName(): string
     {
-        return $this->propertyName;
+        return $this->fieldName;
     }
 
     public function getReflectionProperty(string $propertyName): \ReflectionProperty
@@ -102,20 +93,20 @@ abstract class Component implements ComponentInterface
         return $this->classMetadata->getReflectionProperty($propertyName);
     }
 
-    public function getResult(): null|object|array
+    public function getNodeResult(): ?NodeResult
     {
-        return $this->result;
+        return $this->nodeResult;
     }
 
-    public function setResult(object|array $result): static
+    public function setNodeResult(NodeResult $nodeResult): static
     {
-        $this->result = $result;
+        $this->nodeResult = $nodeResult;
         return $this;
     }
 
-    public function getParentResult(): null|object|array
+    public function getParentResult(): null|NodeResult
     {
-        return $this->parent->getResult();
+        return $this->parentNode->getNodeResult();
     }
 
     public function addCondition(Condition $condition): static
@@ -124,7 +115,7 @@ abstract class Component implements ComponentInterface
         return $this;
     }
 
-    public function setClassMetadata(ClassMetadata $classMetadata): Component
+    public function setClassMetadata(ClassMetadata $classMetadata): Node
     {
         $this->classMetadata = $classMetadata;
         return $this;
@@ -139,6 +130,11 @@ abstract class Component implements ComponentInterface
     public function isOwningSide(): bool
     {
         return !$this->propertyInformations['isOwningSide'];
+    }
+
+    public function isIdentifier(): bool{
+        return key_exists('isIdentifier', $this->propertyInformations) && $this->propertyInformations['isIdentifier'] === true;
+
     }
 
     public function getParentProperty(): string
@@ -158,15 +154,37 @@ abstract class Component implements ComponentInterface
         return $this->classMetadata->getName();
     }
 
-    public function hasBeenHydrated(): bool
+    /**
+     * @return ClassMetadata[]
+     */
+    public function getInheritedClassMetadatas(): array
     {
-        return $this->hasBeenHydrated;
+        return $this->inheritedClassMetadatas;
     }
 
-    public function setHasBeenHydrated(bool $hasBeenHydrated): static
+    /**
+     * @param ClassMetadata[] $classMetadatas
+     * @return $this
+     */
+    public function setInheritedClassMetadatas(array $classMetadatas): static
     {
-        $this->hasBeenHydrated = $hasBeenHydrated;
+        $this->inheritedClassMetadatas = $classMetadatas;
         return $this;
+    }
+
+    /**
+     * @param ClassMetadata $classMetadata
+     * @return $this
+     */
+    public function addInheritedClassMetadata(ClassMetadata $classMetadata): static
+    {
+        $this->inheritedClassMetadatas[] = $classMetadata;
+        return $this;
+    }
+
+    public function isSuccessorEntity(): bool
+    {
+        return count($this->inheritedClassMetadatas) > 0;
     }
 
     public static function expect($object): static
@@ -180,9 +198,35 @@ abstract class Component implements ComponentInterface
 
     public function __toString(): string
     {
-        return $this->propertyName;
+        return $this->fieldName;
     }
 
     abstract public function handle(SmartFetchVisitorInterface $visitor): void;
     abstract public function isComposite(): bool;
+
+    public function getIdentifierNode(): ?LeafNode
+    {
+        return $this->identifierNode;
+    }
+
+    public function setIdentifierNode(?LeafNode $identifierNode): static
+    {
+        $this->identifierNode = $identifierNode;
+        
+        return $this;
+    }
+
+    public function setFetchEager(bool $fetchEager): static
+    {
+        $this->fetchEager = $fetchEager;
+
+        return $this;
+    }
+
+    public function isFetchEager(): bool
+    {
+        return $this->fetchEager;
+    }
+
+    abstract public function isCollection(): bool;
 }

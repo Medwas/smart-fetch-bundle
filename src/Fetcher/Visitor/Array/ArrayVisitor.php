@@ -6,16 +6,15 @@ use Doctrine\ORM\QueryBuilder;
 use Exception;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchArray;
-use Verclam\SmartFetchBundle\Fetcher\History\HistoryPaths;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\ArrayQueryBuilderGenerator;
 use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\Array\ResultsProcessor;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Component;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Component\Composite;
+use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\NodeResultFactory;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\CompositeNode;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
 class ArrayVisitor implements SmartFetchVisitorInterface
 {
-    private HistoryPaths $history;
 
     /**
      * @param ArrayQueryBuilderGenerator $queryBuilder
@@ -24,23 +23,19 @@ class ArrayVisitor implements SmartFetchVisitorInterface
     public function __construct(
         private readonly ArrayQueryBuilderGenerator     $queryBuilder,
         private readonly ResultsProcessor               $resultsProcessor,
+        private readonly NodeResultFactory                  $resultFactory,
     )
     {
-        $this->initHistory();
     }
 
-    private function initHistory(): void
-    {
-        $this->history = new HistoryPaths();
-    }
 
     /**
-     * @param Component $component
+     * @param Node $node
      * @return void
      */
-    public function visit(Component $component): void
+    public function visit(Node $node): void
     {
-        $component->handle($this);
+        $node->handle($this);
     }
 
     /**
@@ -55,59 +50,61 @@ class ArrayVisitor implements SmartFetchVisitorInterface
     /**
      * @throws Exception
      */
-    public function fetchResult(Component $component): void
+    public function fetchResult(Node $node): void
     {
-        //TODO: ADD MANAGEMENT OF THE MAX CONFIGURATION
-        $queryBuilder = $this->generateQuery($component);
-
-        $this->executeQueryBuilder($component, $queryBuilder);
-
-        //If the node has parent, and have association children
-        //So we must store the history, because we will visit his children
-        //and the history will help us build the join query (Reverse to the root query)
-        if($component->getParent() && $this->isRealComposite($component)) {
-            $this->history->add($component->getParent());
+        if(!($node instanceof CompositeNode) && $node->isFetchEager()){
+            return;
         }
+
+        //TODO: ADD MANAGEMENT OF THE MAX CONFIGURATION
+        $queryBuilder = $this->generateQuery($node);
+
+        $this->executeQueryBuilder($node, $queryBuilder);
+        $this->generateIdentifiers($node);
     }
 
     /**
      * @throws Exception
      */
-    public function processResults(Component $component): void
+    public function processResults(Node $node): void
     {
         $processedResult = [];
 
-        if ($component instanceof Composite && $component->isCollection()) {
-            $entities = $component->getResult();
+        $nodeResult = $node->getNodeResult();
+
+        if ($node instanceof CompositeNode && $node->isCollection()) {
+            $entities = $nodeResult->getResult();
+
             foreach ($entities as $singleEntity) {
                 $arraySingleEntity = [$singleEntity];
+
+
+                $this->resultsProcessor->processResult($node, $arraySingleEntity);
                 $processedResult = array_merge(
                     $processedResult,
-                    $this->resultsProcessor->processResult($component, $arraySingleEntity)
+                    $arraySingleEntity
                 );
             }
         }else {
-            $processedResult = $this->resultsProcessor->processResult($component);
+            $processedResult = $nodeResult->getResult();
+            $this->resultsProcessor->processResult($node, $processedResult);
         }
 
-        $component->setResult($processedResult);
-
-        // reset the history in case we will use this visitor in other places.
-        $this->initHistory();
+        $nodeResult->setResult($processedResult);
     }
 
     /**
      * Check if the component is a composite and have association
-     * @param Component $component
+     * @param Node $node
      * @return bool
      */
-    private function isRealComposite(Component $component): bool
+    private function isRealComposite(Node $node): bool
     {
-        if(!$component->isComposite()){
+        if(!$node->isComposite()){
             return false;
         }
 
-        foreach ($component->getChildren() as $child){
+        foreach ($node->getChildren() as $child){
             if(!$child->isScalar()){
                 return true;
             }
@@ -118,22 +115,22 @@ class ArrayVisitor implements SmartFetchVisitorInterface
 
     /**
      * Generate the full QB for having all the result for node
-     * @param Component $component
+     * @param Node $node
      * @return QueryBuilder
      * @throws Exception
      */
-    private function generateQuery(Component $component): QueryBuilder
+    private function generateQuery(Node $node): QueryBuilder
     {
-        return $this->queryBuilder->generate($component , $this->history);
+        return $this->queryBuilder->generate($node);
     }
 
     /**
      * Fetch the result and set it in the node
      * @throws Exception
      */
-    private function executeQueryBuilder(Component $component, QueryBuilder $queryBuilder): void
+    private function executeQueryBuilder(Node $node, QueryBuilder $queryBuilder): void
     {
-        $result = match (!$component->isRoot() || ($component instanceof Composite && $component->isCollection())){
+        $result = match (!$node->isRoot() || ($node instanceof CompositeNode && $node->isCollection())){
             true       => $queryBuilder->getQuery()->getArrayResult(),
             false      => $queryBuilder->getQuery()->getSingleResult(),
         };
@@ -142,7 +139,7 @@ class ArrayVisitor implements SmartFetchVisitorInterface
         // that means no result, so we do it manually to an empty array
         // we will need to investigate to understand why in some cases
         // no result give an array with null values.
-            if(count($result) === 1){
+        if(count($result) === 1){
             $allFieldsAreNull = true;
             foreach ($result[0] as $property){
                 if(!is_null($property)){
@@ -155,6 +152,45 @@ class ArrayVisitor implements SmartFetchVisitorInterface
             }
         }
 
-        $component->setResult($result);
+        $nodeResult = $this->resultFactory->create(
+            [
+                'queryBuilder' => $queryBuilder,
+                'result' => $result,
+            ]
+        );
+
+        $node->setNodeResult($nodeResult);
+    }
+
+
+    /**
+     * Create the identifiers result of the current that will serve to create optimised
+     * query builder for the children using an IN(identifiers) condition to avoid too many joins
+     * @param Node $node
+     * @return void
+     */
+    public function generateIdentifiers(Node $node): void
+    {
+        $nodeResult = $node->getNodeResult();
+        $arrayResult = $nodeResult->getResult();
+
+        if($node->isRoot() && count($arrayResult) === 1){
+            return;
+        }
+
+        $identifierNode = $node->getIdentifierNode();
+        $identifierPropertyName = $identifierNode->getFieldName();
+
+        $identifiers = array_unique(
+            array_column($arrayResult, $identifierPropertyName)
+        );
+
+        $identifierNodeResult = $this->resultFactory->create(
+            [
+                'result' => $identifiers,
+            ]
+        );
+
+        $identifierNode->setNodeResult($identifierNodeResult);
     }
 }

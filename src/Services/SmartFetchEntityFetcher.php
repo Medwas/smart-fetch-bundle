@@ -90,7 +90,7 @@ class SmartFetchEntityFetcher
             break;
         }
 
-        return [$tree->getResult()];
+        return [$tree->getNodeResult()->getResult()];
     }
 
 }
