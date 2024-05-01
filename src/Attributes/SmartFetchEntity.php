@@ -16,6 +16,7 @@ class SmartFetchEntity extends SmartFetch
         string $argumentName = null,
         bool   $collection = false,
         string $entityManager = null,
+        string $filterPagerClass = null,
         array  $options = [],
     )
     {
@@ -24,7 +25,7 @@ class SmartFetchEntity extends SmartFetch
         }
         $this->mappers = $mappers;
 
-        parent::__construct($queryName, $class, $argumentName, $collection, $entityManager, $options);
+        parent::__construct($queryName, $class, $argumentName, $collection, $entityManager, $filterPagerClass, $options);
     }
 
     public function getMappersMode(): MappersModeEnum

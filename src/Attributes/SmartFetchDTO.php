@@ -21,4 +21,9 @@ class SmartFetchDTO extends SmartFetch
     {
         return [];
     }
+
+    public function getType(): string
+    {
+        return 'dto';
+    }
 }

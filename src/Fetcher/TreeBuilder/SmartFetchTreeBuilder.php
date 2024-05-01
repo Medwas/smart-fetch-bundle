@@ -2,7 +2,6 @@
 
 namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder;
 
-use Doctrine\ORM\Query\Expr\Composite;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use Error;
 use Exception;
@@ -97,6 +96,8 @@ class SmartFetchTreeBuilder
                             'isIdentifier'  => $idIdentifier,
                         ]
                     );
+
+                $leafNode = LeafNode::expect($leafNode);
                 
                 //Specify the scalar identifier to this compositeNode
                 if ($idIdentifier) {
@@ -110,13 +111,13 @@ class SmartFetchTreeBuilder
             $associationMapping = $metadata->getAssociationMapping($parentProperty);
             $classMetaData = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
 
-            $successorsClassMetadatas = $this->retrieveSuccessorsClassMetadata($classMetaData);
+            $successorsClassMetadata = $this->retrieveSuccessorsClassMetadata($classMetaData);
 
             if (count($childrenProperty) === 0) {
                 $leafNode = $this->createLeafNode(
                     $classMetaData,
                     $smartFetch,
-                    $successorsClassMetadatas,
+                    $successorsClassMetadata,
                     $associationMapping,
                 );
 
@@ -131,7 +132,7 @@ class SmartFetchTreeBuilder
                     $classMetaData,
                     $smartFetch,
                     NodeFactory::COMPOSITE,
-                    $successorsClassMetadatas,
+                    $successorsClassMetadata,
                     $associationMapping
                 );
 
@@ -148,7 +149,7 @@ class SmartFetchTreeBuilder
 
     /**
      * @param ClassMetadata $classMetadata
-     * @param ClassMetadata[] $successorClassMetadatas
+     * @return array
      */
     private function retrieveSuccessorsClassMetadata(ClassMetadata $classMetadata): array
     {
@@ -199,7 +200,7 @@ class SmartFetchTreeBuilder
     private function createLeafNode(
         ClassMetadata $classMetadata,
         SmartFetch $smartFetch,
-        array $successorsClassMetadatas,
+        array $successorsClassMetadata,
         array $options = []
     ): Node {
         $type = NodeFactory::LEAF;
@@ -212,7 +213,7 @@ class SmartFetchTreeBuilder
                 ->generateComposite(
                     $classMetadata,
                     $options,
-                    $successorsClassMetadatas,
+                    $successorsClassMetadata,
                 );
 
             $compositeNode = CompositeNode::expect($compositeNode);
@@ -235,7 +236,7 @@ class SmartFetchTreeBuilder
             ->generateLeaf(
                 $classMetadata,
                 $options,
-                $successorsClassMetadatas,
+                $successorsClassMetadata,
             );
 
         return LeafNode::expect($leafNode);
