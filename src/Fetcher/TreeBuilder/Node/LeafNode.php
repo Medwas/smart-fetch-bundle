@@ -13,11 +13,6 @@ class LeafNode extends Node
         parent::__construct();
     }
 
-    public function isComposite(): bool
-    {
-        return false;
-    }
-
     public function handle(SmartFetchVisitorInterface $visitor): void
     {
         $visitor->fetchResult($this);

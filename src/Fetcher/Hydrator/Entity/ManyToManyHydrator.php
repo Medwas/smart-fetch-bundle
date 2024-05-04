@@ -16,8 +16,8 @@ class ManyToManyHydrator implements SmartFetchEntityHydratorInterface
      */
     public function hydrate(Node $node): void
     {
-//            if($component->isOwningSide()){
-//                $component->setHasBeenHydrated(true);
+//            if($node->isOwningSide()){
+//                $node->setHasBeenHydrated(true);
 //                return;
 //            }
         $nodeResult = $node->getNodeResult();

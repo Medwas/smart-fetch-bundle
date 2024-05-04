@@ -1,6 +1,6 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\Enum;
+namespace Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\Enum;
 
 enum PayloadSourceEnum: string
 {

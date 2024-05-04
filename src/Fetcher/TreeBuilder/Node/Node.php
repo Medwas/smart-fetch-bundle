@@ -2,10 +2,11 @@
 
 namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node;
 
-use Error;
-use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
 use Doctrine\Persistence\Mapping\ClassMetadata;
-use Verclam\SmartFetchBundle\Fetcher\Condition\PropertyCondition;
+use Error;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\Attributes\SmartFetchConditionInterface;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\FieldCondition;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\FieldConditionCollection;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\NodeResult;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
@@ -15,19 +16,26 @@ abstract class Node implements NodeInterface
     private ?Node $parentNode = null;
     private ?LeafNode $identifierNode = null;
     private ClassMetadata $classMetadata;
-    private PropertyCondition $propertyCondition;
+    private FieldConditionCollection $fieldConditionCollection;
 
     private string $alias;
     private string $fieldName;
     private ?NodeResult $nodeResult = null;
     protected array $propertyInformations;
     /** @var ClassMetadata[]  */
-    private array $inheritedClassMetadatas = [];
+    private array $inheritedClassMetadata = [];
     private bool $fetchEager = false;
+
+    /**
+     * @var Node[]
+     */
+    protected ChildrenCollection $children;
+    private bool $isCollection = false;
 
     public function __construct()
     {
-        $this->propertyCondition = new PropertyCondition();
+        $this->fieldConditionCollection = new FieldConditionCollection();
+        $this->children = new ChildrenCollection();
     }
 
     public function isRoot(): bool
@@ -51,9 +59,15 @@ abstract class Node implements NodeInterface
         return $this->classMetadata;
     }
 
-    public function getPropertyCondition(): PropertyCondition
+    public function getFieldConditionCollection(): FieldConditionCollection
     {
-        return $this->propertyCondition;
+        return $this->fieldConditionCollection;
+    }
+
+    public function addFieldCondition(FieldCondition $condition): static
+    {
+        $this->fieldConditionCollection->add($condition);
+        return $this;
     }
 
      public function hasType(int $type): bool
@@ -109,12 +123,6 @@ abstract class Node implements NodeInterface
         return $this->parentNode->getNodeResult();
     }
 
-    public function addCondition(Condition $condition): static
-    {
-        $this->propertyCondition->add($condition);
-        return $this;
-    }
-
     public function setClassMetadata(ClassMetadata $classMetadata): Node
     {
         $this->classMetadata = $classMetadata;
@@ -157,18 +165,18 @@ abstract class Node implements NodeInterface
     /**
      * @return ClassMetadata[]
      */
-    public function getInheritedClassMetadatas(): array
+    public function getInheritedClassMetadata(): array
     {
-        return $this->inheritedClassMetadatas;
+        return $this->inheritedClassMetadata;
     }
 
     /**
      * @param ClassMetadata[] $classMetadatas
      * @return $this
      */
-    public function setInheritedClassMetadatas(array $classMetadatas): static
+    public function setInheritedClassMetadata(array $classMetadatas): static
     {
-        $this->inheritedClassMetadatas = $classMetadatas;
+        $this->inheritedClassMetadata = $classMetadatas;
         return $this;
     }
 
@@ -178,13 +186,13 @@ abstract class Node implements NodeInterface
      */
     public function addInheritedClassMetadata(ClassMetadata $classMetadata): static
     {
-        $this->inheritedClassMetadatas[] = $classMetadata;
+        $this->inheritedClassMetadata[] = $classMetadata;
         return $this;
     }
 
     public function isSuccessorEntity(): bool
     {
-        return count($this->inheritedClassMetadatas) > 0;
+        return count($this->inheritedClassMetadata) > 0;
     }
 
     public static function expect($object): static
@@ -200,9 +208,6 @@ abstract class Node implements NodeInterface
     {
         return $this->fieldName;
     }
-
-    abstract public function handle(SmartFetchVisitorInterface $visitor): void;
-    abstract public function isComposite(): bool;
 
     public function getIdentifierNode(): ?LeafNode
     {
@@ -228,5 +233,43 @@ abstract class Node implements NodeInterface
         return $this->fetchEager;
     }
 
-    abstract public function isCollection(): bool;
+    public function getChildren(): ChildrenCollection
+    {
+        return $this->children;
+    }
+
+    public function addChild(Node $child): static
+    {
+        $this->children->add($child);
+        $child->setParentNode($this);
+        $this->childrenFieldNames[$child->getAlias()] = $child->getFieldName();
+        return $this;
+    }
+
+    public function hasChildFieldName(string $fieldName): bool
+    {
+        return $this->children->hasChildFieldName($fieldName);
+    }
+
+    public function getChildByFieldName(string $fieldName): ?Node
+    {
+        return $this->children->getChildByFieldName($fieldName);
+    }
+
+    public function isComposite(): bool
+    {
+        return $this->children->isEmpty();
+    }
+
+    public function isCollection(): bool
+    {
+        return $this->isCollection;
+    }
+
+    public function setIsCollection(bool $isCollection): void
+    {
+        $this->isCollection = $isCollection;
+    }
+
+    abstract public function handle(SmartFetchVisitorInterface $visitor): void;
 }

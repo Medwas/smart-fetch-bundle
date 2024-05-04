@@ -3,8 +3,7 @@
 namespace Verclam\SmartFetchBundle\Attributes;
 
 use Error;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\AbstractFilterPagerDTO;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\Interfaces\FilterPagerDTOInterface;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\AbstractFilterPagerDTO;
 
 abstract class SmartFetch
 {

@@ -1,15 +1,14 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager;
+namespace Verclam\SmartFetchBundle\Fetcher\FilterPager;
 
 use Error;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\AbstractFilterPagerDTO;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\Interfaces\FilterPagerDTOInterface;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory\FilterPagerFactoryInterface;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\AbstractFilterPagerDTO;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Factory\FilterPagerFactoryInterface;
 
 class FilterPagerResolver
 {

@@ -3,7 +3,7 @@
 namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\Generators;
 
 use Doctrine\ORM\QueryBuilder;
-use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\Attributes\FilterBy;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityReverseQueryBuilderGenerator;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\NodeQueryBuilderGeneratorInterface;
@@ -27,7 +27,6 @@ class CompositeNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
             ->from($node->getClassName(), $node->getAlias());
 
         $this->addJoin($node, $queryBuilder);
-        $this->addCondition($parentNode, $queryBuilder);
 
         //in case it the root, we don't need to make any parent identifier condition
         if(!$node->isRoot()){
@@ -81,7 +80,7 @@ class CompositeNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
                 $childNode->getParentProperty()
             );
 
-        foreach ($parentNode->getInheritedClassMetadatas() as $inheritedClassMetadata){
+        foreach ($parentNode->getInheritedClassMetadata() as $inheritedClassMetadata){
 
             if($parentClassname !== $inheritedClassMetadata->getName()){
                 continue;
@@ -118,16 +117,6 @@ class CompositeNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
      * @param QueryBuilder $queryBuilder
      * @return void
      */
-    private function addCondition(Node $node, QueryBuilder $queryBuilder): void
-    {
-        /** @var Condition $condition */
-        foreach ($node->getPropertyCondition() as $condition){
-            $queryBuilder = $queryBuilder
-                ->andWhere($node->getAlias() . '.' . $condition->property . $condition->operator . $condition->property)
-                ->setParameter($condition->property, $condition->value);
-        }
-    }
-
     /**
      * Create the condition using the parent result to optimise the request to the DB
      * @param Node $parentNode

@@ -6,39 +6,9 @@ use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 
 class CompositeNode extends Node
 {
-    /**
-     * @var Node[]
-     */
-    private array $children = [];
-    private bool $isCollection = false;
-
     public function __construct()
     {
         parent::__construct();
-    }
-
-    public function isComposite(): bool
-    {
-        return true;
-    }
-
-    public function getChildren(): array
-    {
-        return $this->children;
-    }
-
-    public function addChild(NodeInterface $child): static
-    {
-        $this->children[] = $child;
-        $child->setParentNode($this);
-        return $this;
-    }
-
-    public function setChildren(array $children): static
-    {
-        $this->children = $children;
-
-        return $this;
     }
 
     public function handle(SmartFetchVisitorInterface $visitor): void
@@ -62,15 +32,5 @@ class CompositeNode extends Node
         if($this->isRoot()){
             $visitor->processResults($this);
         }
-    }
-
-    public function isCollection(): bool
-    {
-        return $this->isCollection;
-    }
-
-    public function setIsCollection(bool $isCollection): void
-    {
-        $this->isCollection = $isCollection;
     }
 }

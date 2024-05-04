@@ -95,7 +95,7 @@ class EntityVisitor implements SmartFetchVisitorInterface
     public function processResults(Node $node): void
     {
         // nothing to do here because entities are object and every is done in the fetch method, so we find
-        // the final result by default in the root component
+        // the final result by default in the root node
         $this->resultsProcessor->processResult($node);
     }
 }

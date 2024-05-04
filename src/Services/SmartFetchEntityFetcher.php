@@ -9,8 +9,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
 use Verclam\SmartFetchBundle\Attributes\SmartFetchInterface;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\FilterPagerResolver;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\FilterPagerResolver;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder;
 use Verclam\SmartFetchBundle\Fetcher\Visitor\SmartFetchVisitorInterface;
 

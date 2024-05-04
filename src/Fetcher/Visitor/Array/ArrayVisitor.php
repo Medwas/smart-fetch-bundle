@@ -94,7 +94,7 @@ class ArrayVisitor implements SmartFetchVisitorInterface
     }
 
     /**
-     * Check if the component is a composite and have association
+     * Check if the node is a composite and have association
      * @param Node $node
      * @return bool
      */
@@ -174,7 +174,7 @@ class ArrayVisitor implements SmartFetchVisitorInterface
         $nodeResult = $node->getNodeResult();
         $arrayResult = $nodeResult->getResult();
 
-        if($node->isRoot() && count($arrayResult) === 1){
+        if($node->isRoot() && !$node->isCollection()){
             return;
         }
 

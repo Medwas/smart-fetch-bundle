@@ -3,11 +3,11 @@
 namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array;
 
 use Doctrine\ORM\QueryBuilder;
-use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
 use Verclam\SmartFetchBundle\Fetcher\Configuration\Configuration;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\Attributes\FilterBy;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\CompositeNode;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 
 /**
  * This class will addSelect to child in we want to maximize
@@ -100,11 +100,11 @@ class ArrayAddChildSelectQueryBuilderGenerator
      */
     private function addCondition(Node $node, QueryBuilder $queryBuilder): void
     {
-        /** @var Condition $condition */
-        foreach ($node->getPropertyCondition() as $condition){
+        /** @var FilterBy $condition */
+        foreach ($node->getFieldConditionCollection() as $condition){
             $queryBuilder = $queryBuilder
-                ->andWhere($node->getAlias() . '.' . $condition->property . $condition->operator . $condition->property)
-                ->setParameter($condition->property, $condition->value);
+                ->andWhere($node->getAlias() . '.' . $condition->fieldName . $condition->operator . $condition->fieldName)
+                ->setParameter($condition->fieldName, $condition->value);
         }
     }
 

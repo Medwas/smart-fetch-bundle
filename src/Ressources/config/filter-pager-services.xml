@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<container xmlns="http://symfony.com/schema/dic/services" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="smart-fetch.condition.query-builder.left-join" class="Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\ConditionQueryGenerator\LeftJoinConditionQueryBuilderGenerator"/>
+        <service id="smart-fetch.condition.query-builder.filter-by" class="Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\ConditionQueryGenerator\FilterByConditionQueryBuilderGenerator"/>
+        <service id="smart-fetch.condition.query-builder.order-by" class="Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\ConditionQueryGenerator\OrderByConditionQueryBuilderGenerator"/>
+        <service id="smart-fetch.condition.query-builder.pager" class="Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\ConditionQueryGenerator\PagerConditionQueryBuilderGenerator"/>
+
+        <service id="verclam.smart-fetch.array-root-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\Generators\RootNodeQueryBuilder" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetch.object-manager"/>
+            <argument type="iterator">
+                <argument type="service" id="smart-fetch.condition.query-builder.left-join"/>
+                <argument type="service" id="smart-fetch.condition.query-builder.filter-by"/>
+                <argument type="service" id="smart-fetch.condition.query-builder.order-by"/>
+                <argument type="service" id="smart-fetch.condition.query-builder.pager"/>
+            </argument>
+        </service>
+
+        <service id="verclam.smart-fetch.entity-root-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\Generators\RootNodeQueryBuilder" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetch.object-manager"/>
+            <argument type="iterator">
+                <argument type="service" id="smart-fetch.condition.query-builder.left-join"/>
+                <argument type="service" id="smart-fetch.condition.query-builder.filter-by"/>
+                <argument type="service" id="smart-fetch.condition.query-builder.order-by"/>
+                <argument type="service" id="smart-fetch.condition.query-builder.pager"/>
+            </argument>
+        </service>
+    </services>
+
+</container>

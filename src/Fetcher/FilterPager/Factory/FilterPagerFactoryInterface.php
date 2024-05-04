@@ -1,9 +1,9 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory;
+namespace Verclam\SmartFetchBundle\Fetcher\FilterPager\Factory;
 
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\AbstractFilterPagerDTO;
 use Symfony\Component\HttpFoundation\Request;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\AbstractFilterPagerDTO;
 
 interface FilterPagerFactoryInterface
 {

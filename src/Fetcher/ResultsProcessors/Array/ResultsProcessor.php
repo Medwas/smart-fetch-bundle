@@ -75,7 +75,7 @@ class ResultsProcessor implements ResultsProcessorInterface
     }
 
     /**
-     * Check if the component is a composite and have association
+     * Check if the node is a composite and have association
      * @param Node $node
      * @return bool
      */

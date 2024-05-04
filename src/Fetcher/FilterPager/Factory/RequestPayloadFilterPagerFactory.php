@@ -1,12 +1,16 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory;
+namespace Verclam\SmartFetchBundle\Fetcher\FilterPager\Factory;
 
 use Symfony\Component\HttpFoundation\Request;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\AbstractFilterPagerDTO;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\RequestPayloadFilterPager;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\AbstractFilterPagerDTO;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\RequestPayloadFilterPager;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory\HttpException;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory\NotEncodableValueException;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory\Response;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory\UnsupportedFormatException;
 
 class RequestPayloadFilterPagerFactory implements FilterPagerFactoryInterface
 {

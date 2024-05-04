@@ -3,7 +3,8 @@
 namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\Generators;
 
 use Doctrine\ORM\QueryBuilder;
-use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\Attributes\FilterBy;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\ConditionQueryGenerator\ConditionQueryBuilderGeneratorInterface;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\NodeQueryBuilderGeneratorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
@@ -11,8 +12,13 @@ use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 class RootNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
 {
 
+    /**
+     * @param SmartFetchObjectManager $objectManager
+     * @param iterable<ConditionQueryBuilderGeneratorInterface> $conditionQueryGenerators
+     */
     public function __construct(
         private readonly SmartFetchObjectManager    $objectManager,
+        private iterable                            $conditionQueryGenerators,
     )
     {
     }
@@ -38,11 +44,14 @@ class RootNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
      */
     private function addCondition(Node $node, QueryBuilder $queryBuilder): void
     {
-        /** @var Condition $condition */
-        foreach ($node->getPropertyCondition() as $condition){
-            $queryBuilder = $queryBuilder
-                ->andWhere($node->getAlias() . '.' . $condition->property . $condition->operator . $condition->property)
-                ->setParameter($condition->property, $condition->value);
+        /** @var FilterBy $condition */
+        foreach ($node->getFieldConditionCollection() as $fieldConditions){
+            foreach ($this->conditionQueryGenerators as $conditionQueryGenerator){
+                if($conditionQueryGenerator->supports($fieldConditions)){
+                    $conditionQueryGenerator->generateQuery($fieldConditions, $queryBuilder, $node);
+                    break;
+                }
+            }
         }
     }
 

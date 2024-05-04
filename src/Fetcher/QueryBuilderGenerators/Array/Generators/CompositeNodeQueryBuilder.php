@@ -4,7 +4,7 @@ namespace Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\Generato
 
 use Doctrine\ORM\QueryBuilder;
 use Exception;
-use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\Attributes\FilterBy;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
 use Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\NodeQueryBuilderGeneratorInterface;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
@@ -33,7 +33,6 @@ class CompositeNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
 
         $this->addSelect($node, $queryBuilder);
         $this->addJoin($node, $queryBuilder);
-        $this->addCondition($parentNode, $queryBuilder);
 
         //in case it the root, we don't need to make any parent identifier condition
         if(!$node->isRoot()){
@@ -91,15 +90,6 @@ class CompositeNodeQueryBuilder implements NodeQueryBuilderGeneratorInterface
      * @param QueryBuilder $queryBuilder
      * @return void
      */
-    private function addCondition(Node $parentNode, QueryBuilder $queryBuilder): void
-    {
-        /** @var Condition $condition */
-        foreach ($parentNode->getPropertyCondition() as $condition){
-            $queryBuilder = $queryBuilder
-                ->andWhere($parentNode->getAlias() . '.' . $condition->property . $condition->operator . $condition->property)
-                ->setParameter($condition->property, $condition->value);
-        }
-    }
 
     /**
      * Create the condition using the parent's identifier to optimise the request to the DB

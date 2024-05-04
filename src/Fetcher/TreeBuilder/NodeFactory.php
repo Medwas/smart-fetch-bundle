@@ -2,15 +2,15 @@
 
 namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder;
 
+use Doctrine\Persistence\Mapping\ClassMetadata;
 use Exception;
 use Verclam\SmartFetchBundle\Attributes\SmartFetch;
-use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Condition;
-use Doctrine\Persistence\Mapping\ClassMetadata;
-use Verclam\SmartFetchBundle\Fetcher\Condition\ConditionFactory;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\Attributes\FilterBy;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\ConditionFactory;
 use Verclam\SmartFetchBundle\Fetcher\ObjectManager\SmartFetchObjectManager;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\CompositeNode;
 use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\LeafNode;
+use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Node\Node;
 
 class NodeFactory
 {
@@ -28,7 +28,7 @@ class NodeFactory
      * @param ClassMetadata $classMetadata
      * @param SmartFetch $smartFetch
      * @param string $type
-     * @param ClassMetadata[] $successorClassMetadatas
+     * @param ClassMetadata[] $successorClassMetadata
      * @param array $options
      * @return Node
      * @throws Exception
@@ -37,14 +37,14 @@ class NodeFactory
         ClassMetadata $classMetadata,
         SmartFetch $smartFetch,
         string $type,
-        array $successorClassMetadatas,
+        array $successorClassMetadata,
         array $options = [],
     ): Node
     {
         return match ($type) {
-            self::LEAF => $this->generateLeaf($classMetadata, $options, $successorClassMetadatas),
-            self::COMPOSITE => $this->generateComposite($classMetadata, $options, $successorClassMetadatas),
-            self::ROOT => $this->generateRoot($classMetadata, $smartFetch, $successorClassMetadatas),
+            self::LEAF => $this->generateLeaf($classMetadata, $options, $successorClassMetadata),
+            self::COMPOSITE => $this->generateComposite($classMetadata, $options, $successorClassMetadata),
+            self::ROOT => $this->generateRoot($classMetadata, $smartFetch, $successorClassMetadata),
             default => throw new Exception('Unknown type')
         };
     }
@@ -66,7 +66,7 @@ class NodeFactory
         $leafNode->setAlias($options['alias'] ?? $this->generateCommonAliases($options['fieldName']));
         $leafNode->setFieldName($options['fieldName']);
         $leafNode->setPropertyInformations($options);
-        $leafNode->setInheritedClassMetadatas($successorClassMetadatas);
+        $leafNode->setInheritedClassMetadata($successorClassMetadatas);
         return $leafNode;
     }
 
@@ -87,44 +87,34 @@ class NodeFactory
         $compositeNode->setAlias($this->generateCommonAliases($options['fieldName']));
         $compositeNode->setFieldName($options['fieldName']);
         $compositeNode->setPropertyInformations($options);
-        $compositeNode->setInheritedClassMetadatas($successorClassMetadatas);
+        $compositeNode->setInheritedClassMetadata($successorClassMetadatas);
         return $compositeNode;
     }
 
     /**
      * @param ClassMetadata $classMetadata
      * @param SmartFetch $smartFetch
-     * @param ClassMetadata[] $successorClassMetadatas
+     * @param ClassMetadata[] $successorClassMetadata
      * @return CompositeNode
      * @throws Exception
      */
     public function generateRoot(
         ClassMetadata $classMetadata,
         SmartFetch $smartFetch,
-        array $successorClassMetadatas
+        array $successorClassMetadata
     ): CompositeNode
     {
         $rootNode = new CompositeNode();
         $rootAlias = $this->generateRootAlias($smartFetch);
 
-        if (!$smartFetch->isCollection()) {
-            $condition = $this->conditionFactory->generate(
-                [
-                    'type' => ConditionFactory::FILTER_BY,
-                    'property' => $classMetadata->getIdentifier()[0],
-                    'operator' => Condition::EQUAL,
-                    'value' => $smartFetch->getQueryValue()
-                ]
-            );
-            $rootNode->addCondition($condition);
-        }
+        $this->conditionFactory->generate($classMetadata, $smartFetch, $rootNode);
 
         $rootNode->setIsCollection($smartFetch->isCollection());
         $rootNode->setClassMetadata($classMetadata);
         $rootNode->setAlias($rootAlias);
         $rootNode->setFieldName($rootAlias);
         $rootNode->setPropertyInformations(['type' => SmartFetchObjectManager::ROOT]);
-        $rootNode->setInheritedClassMetadatas($successorClassMetadatas);
+        $rootNode->setInheritedClassMetadata($successorClassMetadata);
 
         return $rootNode;
     }

@@ -14,7 +14,7 @@
 
         <service id="verclam.smart-fetch.node-result-factory" class="Verclam\SmartFetchBundle\Fetcher\ResultsProcessors\NodeResultFactory" autowire="true" public="false" />
 
-        <service id="verclam.smart-fetch.condition-factory" class="Verclam\SmartFetchBundle\Fetcher\Condition\ConditionFactory" autowire="true" public="false" />
+        <service id="verclam.smart-fetch.condition-factory" class="Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\ConditionFactory" autowire="true" public="false" />
 
         <service id="verclam.smart-fetch.entity-many-to-many-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Entity\ManyToManyHydrator" autowire="true" public="false" />
         <service id="verclam.smart-fetch.entity-one-to-many-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Entity\OneToManyHydrator" autowire="true" public="false" />
@@ -25,30 +25,22 @@
         <service id="verclam.smart-fetch.array-collection-arrays-to-root-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Array\CollectionArraysToRootHydrator" autowire="true" public="false" />
         <service id="verclam.smart-fetch.array-single-array-to-root-hydrator" class="Verclam\SmartFetchBundle\Fetcher\Hydrator\Array\SingleArrayToRootHydrator" autowire="true" public="false" />
 
-        <service id="verclam.smart-fetch.filter-pager-query-string-factory" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory\QueryStringFilterPagerFactory" autowire="true" public="false" >
+        <service id="verclam.smart-fetch.filter-pager-query-string-factory" class="Verclam\SmartFetchBundle\Fetcher\FilterPager\Factory\QueryStringFilterPagerFactory" autowire="true" public="false" >
             <argument type="service" id="serializer"/>
         </service>
 
-        <service id="verclam.smart-fetch.filter-request-payload-string-factory" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\Factory\RequestPayloadFilterPagerFactory" autowire="true" public="false" >
+        <service id="verclam.smart-fetch.filter-request-payload-string-factory" class="Verclam\SmartFetchBundle\Fetcher\FilterPager\Factory\RequestPayloadFilterPagerFactory" autowire="true" public="false" >
             <argument type="service" id="serializer"/>
         </service>
 
-        <service id="verclam.smart-fetch.filter-pager-resolver" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\FilterPagerResolver" autowire="true" public="false">
+        <service id="verclam.smart-fetch.filter-pager-resolver" class="Verclam\SmartFetchBundle\Fetcher\FilterPager\FilterPagerResolver" autowire="true" public="false">
             <argument type="iterator">
                 <argument type="service" id="verclam.smart-fetch.filter-pager-query-string-factory"/>
                 <argument type="service" id="verclam.smart-fetch.filter-request-payload-string-factory"/>
             </argument>
         </service>
 
-        <service id="verclam.smart-fetch.array-root-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\Generators\RootNodeQueryBuilder" autowire="true" public="false">
-            <argument type="service" id="verclam.smart-fetch.object-manager"/>
-        </service>
-
         <service id="verclam.smart-fetch.array-composite-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Array\Generators\CompositeNodeQueryBuilder" autowire="true" public="false">
-            <argument type="service" id="verclam.smart-fetch.object-manager"/>
-        </service>
-
-        <service id="verclam.smart-fetch.entity-root-node-query-builder" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\Generators\RootNodeQueryBuilder" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetch.object-manager"/>
         </service>
 
@@ -73,14 +65,20 @@
             </argument>
         </service>
 
+<!--        Tree Builder-->
+        <service id="verclam.smart-fetch.tree-builder.fetch-eager-manager" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FetchEagerManager" autowire="true" public="false">
+            <argument type="service" id="verclam.smart-fetch.object-manager"/>
+        </service>
+
         <service id="verclam.smart-fetch.node-factory" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\NodeFactory" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetch.condition-factory"/>
         </service>
 
-        <service id="verclam.smart-fetch.component-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder" autowire="true" public="false">
+        <service id="verclam.smart-fetch.node-tree-builder" class="Verclam\SmartFetchBundle\Fetcher\TreeBuilder\SmartFetchTreeBuilder" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetch.object-manager"/>
             <argument type="service" id="verclam.smart-fetch.node-factory"/>
             <argument type="service" id="verclam.smart-fetch.tree-builder-handler"/>
+            <argument type="service" id="verclam.smart-fetch.tree-builder.fetch-eager-manager"/>
         </service>
 
         <service id="verclam.smart-fetch.entity-add-child-select-query-generator" class="Verclam\SmartFetchBundle\Fetcher\QueryBuilderGenerators\Entity\EntityAddChildSelectQueryBuilderGenerator">
@@ -127,7 +125,7 @@
         <service id="verclam.smart-fetcher-entity-fetcher" class="Verclam\SmartFetchBundle\Services\SmartFetchEntityFetcher" autowire="true" public="false">
             <argument type="service" id="verclam.smart-fetch.configuration"/>
             <argument type="service" id="verclam.smart-fetch.object-manager"/>
-            <argument type="service" id="verclam.smart-fetch.component-tree-builder"/>
+            <argument type="service" id="verclam.smart-fetch.node-tree-builder"/>
             <argument type="service" id="verclam.smart-fetch.argument-name-resolver"/>
             <argument type="service" id="verclam.smart-fetch.filter-pager-resolver"/>
             <argument type="iterator">

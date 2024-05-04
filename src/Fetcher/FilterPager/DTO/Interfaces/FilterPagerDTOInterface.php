@@ -1,6 +1,6 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\Interfaces;
+namespace Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\Interfaces;
 
 interface FilterPagerDTOInterface
 {

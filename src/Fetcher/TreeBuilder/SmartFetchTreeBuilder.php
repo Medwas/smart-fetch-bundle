@@ -17,20 +17,21 @@ use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\Handlers\TreeBuilderHandler;
  * Tree Builder for the smart fetch,
  * It consists of reading the ClassMetadata of the entity
  * build the tree of the relations as an array and then use this
- * array to build a tree of Component that represent the relation
+ * array to build a tree of nodes that represent the relation
  * with all the information needed in every node that we need to fetch.
  */
 class SmartFetchTreeBuilder
 {
     /**
      * @param SmartFetchObjectManager $objectManager
-     * @param NodeFactory $componentFactory
+     * @param NodeFactory $nodeFactory
      * @param TreeBuilderHandler $treeBuilderHandler
      */
     public function __construct(
         private readonly SmartFetchObjectManager    $objectManager,
-        private readonly NodeFactory                $componentFactory,
+        private readonly NodeFactory                $nodeFactory,
         private readonly TreeBuilderHandler         $treeBuilderHandler,
+        private readonly FetchEagerManager          $fetchEagerManager
     ) {
     }
 
@@ -43,13 +44,14 @@ class SmartFetchTreeBuilder
         $classMetaData = $this->objectManager->getClassMetadata($smartFetch->getClass());
 
         $arrayTree  = $this->treeBuilderHandler->handle($smartFetch, $classMetaData);
-        $successorsClassMetadatas = $this->retrieveSuccessorsClassMetadata($classMetaData);
+        $successorsClassMetadata = $this->fetchEagerManager
+            ->retrieveSuccessorsClassMetadata($classMetaData);
 
-        $parent     = $this->componentFactory->generate(
+        $parent     = $this->nodeFactory->generate(
             $classMetaData,
             $smartFetch,
             NodeFactory::ROOT,
-            $successorsClassMetadatas
+            $successorsClassMetadata
         );
         $parent     = CompositeNode::expect($parent);
 
@@ -61,7 +63,7 @@ class SmartFetchTreeBuilder
     }
 
     /**
-     * Build the complete Component Nodes tree
+     * Build the complete Nodes tree
      * of the fields needed for the smart fetch
      * Using the arrayTree
      * @throws Exception
@@ -83,7 +85,7 @@ class SmartFetchTreeBuilder
                 $idIdentifier = $metadata->isIdentifier($parentProperty);
 
                 $leafNode = $this
-                    ->componentFactory
+                    ->nodeFactory
                     ->generate(
                         $metadata,
                         $smartFetch,
@@ -111,7 +113,8 @@ class SmartFetchTreeBuilder
             $associationMapping = $metadata->getAssociationMapping($parentProperty);
             $classMetaData = $this->objectManager->getClassMetadata($associationMapping['targetEntity']);
 
-            $successorsClassMetadata = $this->retrieveSuccessorsClassMetadata($classMetaData);
+            $successorsClassMetadata = $this->fetchEagerManager
+                ->retrieveSuccessorsClassMetadata($classMetaData);
 
             if (count($childrenProperty) === 0) {
                 $leafNode = $this->createLeafNode(
@@ -122,12 +125,13 @@ class SmartFetchTreeBuilder
                 );
 
                 $compositeNode->addChild($leafNode);
-                $this->verifyIsFetchEager($leafNode, $associationMapping);
+                $this->fetchEagerManager
+                    ->hasLinkToParent($leafNode, $associationMapping);
                 continue;
             }
 
             $composite = $this
-                ->componentFactory
+                ->nodeFactory
                 ->generate(
                     $classMetaData,
                     $smartFetch,
@@ -141,75 +145,30 @@ class SmartFetchTreeBuilder
             $compositeNode->addChild($composite);
             $this->buildNodeTree($childrenProperty, $composite, $smartFetch);
             $this->createCompositeFetchEager($composite, $classMetaData);
-            $this->verifyIsFetchEager($compositeNode, $associationMapping);
+            $this->fetchEagerManager
+                ->hasLinkToParent($compositeNode, $associationMapping);
         }
 
         return $compositeNode;
     }
 
     /**
-     * @param ClassMetadata $classMetadata
-     * @return array
-     */
-    private function retrieveSuccessorsClassMetadata(ClassMetadata $classMetadata): array
-    {
-        $successorsClassMetadatas = [];
-
-        foreach ($classMetadata->parentClasses as $parentClass) {
-            $successorsClassMetadatas[] = $this->objectManager->getClassMetadata($parentClass);
-        }
-
-        return $successorsClassMetadatas;
-    }
-
-    /**
-     * @param ClassMetadata $classMetadata
-     * @return Node[]
-     * @throws Exception
-     */
-    private function retrieveFetchEagerEntities(ClassMetadata $classMetadata): array
-    {
-        $fetchEagerChildren = [];
-
-        foreach ($classMetadata->getAssociationMappings() as $insideAssociationMapping) {
-            $insideClassMetadata = $this->objectManager
-                ->getClassMetadata($insideAssociationMapping['targetEntity']);
-
-            //https://github.com/doctrine/orm/issues/4389
-            //https://github.com/doctrine/orm/issues/3778
-            //https://github.com/doctrine/orm/issues/4389
-            //vendor/doctrine/orm/lib/Doctrine/ORM/UnitOfWork.php:2968
-            if ((($insideAssociationMapping['type'] === SmartFetchObjectManager::ONE_TO_ONE)
-                && !$insideAssociationMapping['isOwningSide']) ||
-                (($insideAssociationMapping['type'] === SmartFetchObjectManager::ONE_TO_MANY) &&
-                count($insideClassMetadata->subClasses) > 0)
-            ) {
-                $fetchEagerChildren[] = [
-                    'options'           => $insideAssociationMapping,
-                    'classMetadata'     => $insideClassMetadata,
-                ];
-            }
-        }
-
-        return $fetchEagerChildren;
-    }
-
-    /**
      * @throws Exception
      */
     private function createLeafNode(
-        ClassMetadata $classMetadata,
-        SmartFetch $smartFetch,
-        array $successorsClassMetadata,
-        array $options = []
+        ClassMetadata   $classMetadata,
+        SmartFetch      $smartFetch,
+        array           $successorsClassMetadata,
+        array           $options = []
     ): Node {
         $type = NodeFactory::LEAF;
-        $fetchEagerChildren = $this->retrieveFetchEagerEntities($classMetadata);
+        $fetchEagerChildren = $this->fetchEagerManager
+            ->retrieveFetchEagerEntities($classMetadata);
 
         if (count($fetchEagerChildren) > 0) {
             $type = NodeFactory::COMPOSITE;
 
-            $compositeNode = $this->componentFactory
+            $compositeNode = $this->nodeFactory
                 ->generateComposite(
                     $classMetadata,
                     $options,
@@ -232,7 +191,7 @@ class SmartFetchTreeBuilder
             return $compositeNode;
         }
 
-        $leafNode = $this->componentFactory
+        $leafNode = $this->nodeFactory
             ->generateLeaf(
                 $classMetadata,
                 $options,
@@ -250,7 +209,8 @@ class SmartFetchTreeBuilder
         ClassMetadata   $classMetadata,
     ): void
     {
-        $fetchEagerChildren = $this->retrieveFetchEagerEntities($classMetadata);
+        $fetchEagerChildren = $this->fetchEagerManager
+            ->retrieveFetchEagerEntities($classMetadata);
 
         if(count($fetchEagerChildren) === 0){
             return;
@@ -263,7 +223,7 @@ class SmartFetchTreeBuilder
                     continue 2;
                 }
             }
-            $fetchEagerNode = $this->componentFactory
+            $fetchEagerNode = $this->nodeFactory
                 ->generateLeaf(
                     $associationMapping['classMetadata'],
                     $associationMapping['options'],
@@ -271,18 +231,6 @@ class SmartFetchTreeBuilder
                 );
             $fetchEagerNode->setFetchEager(true);
             $compositeNode->addChild($fetchEagerNode);
-        }
-    }
-
-    private function verifyIsFetchEager(Node $node, $options): void
-    {
-        if(
-            key_exists('mappedBy', $options) &&
-            key_exists('inversedBy', $options) &&
-            !$options['mappedBy'] &&
-            !$options['inversedBy']
-        ){
-            $node->setFetchEager(true);
         }
     }
 }

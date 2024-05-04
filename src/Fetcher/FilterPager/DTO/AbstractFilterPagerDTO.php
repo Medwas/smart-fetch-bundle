@@ -1,19 +1,20 @@
 <?php
 
-namespace Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO;
+namespace Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO;
 
-use Verclam\SmartFetchBundle\Fetcher\Condition\Attributes\Pager;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\Enum\PayloadSourceEnum;
-use Verclam\SmartFetchBundle\Fetcher\TreeBuilder\FilterPager\DTO\Interfaces\FilterPagerDTOInterface;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\Condition\Attributes\Pager;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\Enum\PayloadSourceEnum;
+use Verclam\SmartFetchBundle\Fetcher\FilterPager\DTO\Interfaces\FilterPagerDTOInterface;
 
 abstract class AbstractFilterPagerDTO implements FilterPagerDTOInterface
 {
     protected ?PayloadSourceEnum $payloadSource = null;
     protected ?string $customSelectDQL = null;
+    
     #[Pager]
-    private int $page;
+    protected int $page;
 
-    private int $rows;
+    protected int $rows;
 
     public function getPage(): int
     {
